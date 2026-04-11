@@ -1,12 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 
 // ─── TELEGRAM ─────────────────────────────────────────────────────────────────
 const tg = window.Telegram?.WebApp;
-if (tg) {
-  tg.ready();
-  tg.expand();
-  if (tg.requestFullscreen) tg.requestFullscreen();
-}
+if (tg) { tg.ready(); tg.expand(); if (tg.requestFullscreen) tg.requestFullscreen(); }
 const TG_USER = tg?.initDataUnsafe?.user || null;
 
 // ─── CLOUD STORAGE ────────────────────────────────────────────────────────────
@@ -57,6 +54,7 @@ const Icons = {
   User:        p=><Icon {...p} d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/>,
   Edit:        p=><Icon {...p} d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>,
   Check:       p=><Icon {...p} d="M20 6 9 17l-5-5"/>,
+  Grip:        p=><Icon {...p} d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01" strokeWidth={3}/>,
 };
 
 // ─── INTERVAL CONFIG ──────────────────────────────────────────────────────────
@@ -85,82 +83,80 @@ const fmtT = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).
 const pageSt  = {minHeight:"100vh",background:"linear-gradient(160deg,#0a0a14,#0d1117,#060608)",color:"#fff",padding:"20px",boxSizing:"border-box"};
 const iconBtn = {width:40,height:40,borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",cursor:"pointer",flexShrink:0,transition:"background 0.15s,transform 0.1s"};
 const fldLbl  = {fontSize:11,color:"rgba(255,255,255,0.4)",marginBottom:8,letterSpacing:"0.08em",textTransform:"uppercase"};
-const inputSt = {width:"100%",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:14,color:"#fff",fontSize:16,padding:"13px 16px",outline:"none",boxSizing:"border-box",transition:"border-color 0.2s"};
-const greenBt = {width:"100%",background:"linear-gradient(135deg,#4ade80,#22d3ee)",border:"none",borderRadius:14,padding:"16px",color:"#000",fontSize:16,fontWeight:700,cursor:"pointer",boxShadow:"0 6px 24px rgba(74,222,128,0.25)",transition:"transform 0.12s,box-shadow 0.2s"};
-const menuBSt = {display:"block",width:"100%",background:"none",border:"none",color:"#fff",padding:"13px 18px",textAlign:"left",cursor:"pointer",fontSize:15};
+const inputSt = {width:"100%",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:14,color:"#fff",fontSize:16,padding:"13px 16px",outline:"none",boxSizing:"border-box"};
+const greenBt = {width:"100%",background:"linear-gradient(135deg,#4ade80,#22d3ee)",border:"none",borderRadius:14,padding:"16px",color:"#000",fontSize:16,fontWeight:700,cursor:"pointer",boxShadow:"0 6px 24px rgba(74,222,128,0.25)",transition:"transform 0.12s"};
 const LVLC    = {beginner:"#4ade80",intermediate:"#facc15",pro:"#f43f5e"};
 
-// ─── PRESS BUTTON HOOK ────────────────────────────────────────────────────────
-function usePressStyle(scale=0.97) {
-  const [pressed,setP]=useState(false);
-  const handlers = {
-    onPointerDown:()=>setP(true),
-    onPointerUp:()=>setP(false),
-    onPointerLeave:()=>setP(false),
-  };
-  const style = { transform: pressed?`scale(${scale})`:"scale(1)", transition:"transform 0.12s ease" };
-  return [handlers, style];
+// ─── PRESS HOOK ───────────────────────────────────────────────────────────────
+function usePress(scale=0.97) {
+  const [p,setP]=useState(false);
+  const h={onPointerDown:()=>setP(true),onPointerUp:()=>setP(false),onPointerLeave:()=>setP(false)};
+  return [h,{transform:p?`scale(${scale})`:"scale(1)",transition:"transform 0.12s ease"}];
 }
 
-// ─── ANIMATED PAGE WRAPPER ────────────────────────────────────────────────────
-function Page({children, style={}}) {
-  return (
-    <div style={{...pageSt,...style,animation:"pageIn 0.22s ease both"}}>
-      {children}
-    </div>
-  );
+// ─── PAGE WRAPPER ─────────────────────────────────────────────────────────────
+function Page({children,style={}}) {
+  return <div style={{...pageSt,...style,animation:"pageIn 0.22s ease both"}}>{children}</div>;
 }
 
-// ─── SMALL COMPONENTS ─────────────────────────────────────────────────────────
+// ─── LOADER ───────────────────────────────────────────────────────────────────
 function Loader() {
   return (
     <div style={{...pageSt,display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <div style={{textAlign:"center",animation:"fadeIn 0.3s ease"}}>
-        <div style={{fontSize:36,marginBottom:10}}>🚴</div>
-        <div style={{color:"rgba(255,255,255,0.3)",fontSize:15}}>Загрузка...</div>
-      </div>
+      <div style={{textAlign:"center"}}><div style={{fontSize:36,marginBottom:10}}>🚴</div><div style={{color:"rgba(255,255,255,0.3)",fontSize:15}}>Загрузка...</div></div>
     </div>
   );
 }
 
+// ─── INTERVAL BAR ─────────────────────────────────────────────────────────────
 function IntervalBar({intervals,height=5}) {
   if(!intervals?.length) return null;
   return (
     <div style={{display:"flex",gap:2,height,borderRadius:height/2,overflow:"hidden"}}>
-      {intervals.map((iv,i)=>(
-        <div key={i} style={{flex:iv.duration||1,background:IV[iv.type]?.color||"#4ade80",minWidth:3,borderRadius:height/2,transition:"flex 0.3s ease"}}/>
-      ))}
+      {intervals.map((iv,i)=><div key={i} style={{flex:iv.duration||1,background:IV[iv.type]?.color||"#4ade80",minWidth:3,transition:"flex 0.3s"}}/>)}
     </div>
   );
 }
 
+// ─── CIRCULAR TIMER ───────────────────────────────────────────────────────────
 function CircularTimer({timeRemaining,totalTime,intervalType,isWarning}) {
-  const cfg=IV[intervalType]||IV.slow, R=128, circ=2*Math.PI*R;
+  const cfg=IV[intervalType]||IV.slow,R=128,circ=2*Math.PI*R;
   const offset=circ*(1-(totalTime>0?timeRemaining/totalTime:0));
-  const color=isWarning?"#ef4444":cfg.color, glow=isWarning?"rgba(239,68,68,0.5)":cfg.glow;
+  const color=isWarning?"#ef4444":cfg.color,glow=isWarning?"rgba(239,68,68,0.5)":cfg.glow;
   return (
     <div style={{position:"relative",width:296,height:296}}>
       <svg width={296} height={296} style={{transform:"rotate(-90deg)"}}>
         <circle cx={148} cy={148} r={R} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={14}/>
         <circle cx={148} cy={148} r={R} fill="none" stroke={color} strokeWidth={14} strokeLinecap="round"
           strokeDasharray={circ} strokeDashoffset={offset}
-          style={{transition:"stroke-dashoffset 0.85s cubic-bezier(0.4,0,0.2,1),stroke 0.4s ease",filter:`drop-shadow(0 0 18px ${glow})`}}/>
+          style={{transition:"stroke-dashoffset 0.85s cubic-bezier(0.4,0,0.2,1),stroke 0.4s",filter:`drop-shadow(0 0 18px ${glow})`}}/>
       </svg>
       <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
         <div style={{fontSize:28,marginBottom:4}}>{cfg.emoji}</div>
-        <div style={{fontSize:13,fontWeight:600,letterSpacing:"0.14em",textTransform:"uppercase",color,marginBottom:6,transition:"color 0.4s"}}>{cfg.label}</div>
+        <div style={{fontSize:13,fontWeight:600,letterSpacing:"0.14em",textTransform:"uppercase",color,marginBottom:6}}>{cfg.label}</div>
         <div style={{fontSize:68,fontWeight:200,color:"#fff",fontVariantNumeric:"tabular-nums",lineHeight:1,letterSpacing:"-0.02em"}}>{fmtT(timeRemaining)}</div>
       </div>
     </div>
   );
 }
 
+// ─── WORKOUT CARD (с фиксированным меню через портал) ─────────────────────────
 function WorkoutCard({workout,onStart,onEdit,onDelete}) {
   const total=workout.intervals.reduce((s,i)=>s+i.duration,0);
-  const [ph,phSt]=usePressStyle(0.98);
-  const [menu,setM]=useState(false);
+  const [ph,phSt]=usePress(0.98);
+  const [menu,setMenu]=useState(false);
+  const [menuPos,setMenuPos]=useState({top:0,right:0});
+  const btnRef=useRef(null);
+
+  const openMenu=(e)=>{
+    e.stopPropagation();
+    const r=btnRef.current.getBoundingClientRect();
+    setMenuPos({top:r.bottom+6, right:window.innerWidth-r.right});
+    setMenu(true);
+  };
+
   return (
-    <div style={{position:"relative",animation:"slideUp 0.25s ease both"}}>
+    <div style={{animation:"slideUp 0.22s ease both"}}>
       <div {...ph} onClick={onStart}
         style={{...phSt,background:"linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))",border:"1px solid rgba(255,255,255,0.08)",borderRadius:20,padding:"16px 18px",cursor:"pointer",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
@@ -172,28 +168,46 @@ function WorkoutCard({workout,onStart,onEdit,onDelete}) {
             </div>
             <IntervalBar intervals={workout.intervals}/>
           </div>
-          <button onClick={e=>{e.stopPropagation();setM(v=>!v);}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.3)",cursor:"pointer",padding:"0 0 0 8px",fontSize:22,lineHeight:1,flexShrink:0,transition:"color 0.15s"}}>···</button>
+          {/* Кнопки Редактировать и ··· рядом */}
+          <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+            <button
+              onClick={e=>{e.stopPropagation();onEdit();}}
+              style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"6px 10px",color:"rgba(255,255,255,0.6)",cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",gap:4,transition:"background 0.15s"}}>
+              <Icons.Edit size={13}/>
+            </button>
+            <button ref={btnRef} onClick={openMenu}
+              style={{background:"none",border:"none",color:"rgba(255,255,255,0.35)",cursor:"pointer",padding:"4px 6px",fontSize:20,lineHeight:1,letterSpacing:2}}>···</button>
+          </div>
         </div>
       </div>
-      {menu&&<>
-        <div onClick={()=>setM(false)} style={{position:"fixed",inset:0,zIndex:99}}/>
-        <div style={{position:"absolute",right:0,top:"100%",marginTop:6,background:"#1a1a26",border:"1px solid rgba(255,255,255,0.1)",borderRadius:14,overflow:"hidden",zIndex:100,minWidth:160,boxShadow:"0 16px 40px rgba(0,0,0,0.5)",animation:"fadeIn 0.15s ease"}}>
-          <button onClick={()=>{setM(false);onEdit();}} style={menuBSt}>Редактировать</button>
-          <div style={{height:1,background:"rgba(255,255,255,0.06)"}}/>
-          <button onClick={()=>{setM(false);onDelete();}} style={{...menuBSt,color:"#f43f5e"}}>Удалить</button>
-        </div>
-      </>}
+
+      {/* Меню через портал — всегда поверх всего */}
+      {menu && createPortal(
+        <>
+          <div onClick={()=>setMenu(false)} style={{position:"fixed",inset:0,zIndex:9998}}/>
+          <div style={{position:"fixed",top:menuPos.top,right:menuPos.right,zIndex:9999,background:"#1e1e2e",border:"1px solid rgba(255,255,255,0.12)",borderRadius:14,overflow:"hidden",minWidth:170,boxShadow:"0 20px 48px rgba(0,0,0,0.7)",animation:"fadeIn 0.15s ease"}}>
+            <button onClick={()=>{setMenu(false);onEdit();}} style={{display:"block",width:"100%",background:"none",border:"none",color:"#fff",padding:"13px 18px",textAlign:"left",cursor:"pointer",fontSize:15}}>
+              ✏️ Редактировать
+            </button>
+            <div style={{height:1,background:"rgba(255,255,255,0.07)"}}/>
+            <button onClick={()=>{setMenu(false);onDelete();}} style={{display:"block",width:"100%",background:"none",border:"none",color:"#f43f5e",padding:"13px 18px",textAlign:"left",cursor:"pointer",fontSize:15}}>
+              🗑 Удалить
+            </button>
+          </div>
+        </>,
+        document.body
+      )}
     </div>
   );
 }
 
+// ─── HISTORY CARD ─────────────────────────────────────────────────────────────
 function HistoryCard({result,onClick}) {
   const done=result.completedIntervals===result.totalIntervals;
   const fmt=new Date(result.completedAt).toLocaleDateString("ru-RU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
-  const [ph,phSt]=usePressStyle(0.98);
+  const [ph,phSt]=usePress(0.98);
   return (
-    <div {...ph} onClick={onClick}
-      style={{...phSt,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:16,padding:"14px 16px",cursor:"pointer",animation:"slideUp 0.2s ease both"}}>
+    <div {...ph} onClick={onClick} style={{...phSt,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:16,padding:"14px 16px",cursor:"pointer",animation:"slideUp 0.2s ease both"}}>
       <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:8}}>
         <div>
           <div style={{fontSize:15,fontWeight:500,color:"#fff",marginBottom:3}}>{result.workoutName}</div>
@@ -209,9 +223,10 @@ function HistoryCard({result,onClick}) {
   );
 }
 
+// ─── PROGRAM CARD ─────────────────────────────────────────────────────────────
 function ProgramCard({prog,onUse}) {
   const [open,setO]=useState(false);
-  const [ph,phSt]=usePressStyle(0.99);
+  const [ph,phSt]=usePress(0.99);
   const lc=LVLC[prog.level]||"#fff";
   return (
     <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:20,overflow:"hidden",animation:"slideUp 0.2s ease both"}}>
@@ -228,14 +243,14 @@ function ProgramCard({prog,onUse}) {
               <span style={{fontSize:12,color:"rgba(255,255,255,0.35)"}}>{prog.intervals.length} интервалов</span>
             </div>
           </div>
-          <div style={{fontSize:18,color:"rgba(255,255,255,0.3)",transform:open?"rotate(90deg)":"rotate(0)",transition:"transform 0.25s ease"}}>›</div>
+          <div style={{fontSize:18,color:"rgba(255,255,255,0.3)",transform:open?"rotate(90deg)":"rotate(0)",transition:"transform 0.25s"}}>›</div>
         </div>
         <div style={{marginTop:10}}><IntervalBar intervals={prog.intervals}/></div>
       </div>
       {open&&(
         <div style={{padding:"0 18px 18px",borderTop:"1px solid rgba(255,255,255,0.06)",animation:"fadeIn 0.2s ease"}}>
           <p style={{fontSize:13,color:"rgba(255,255,255,0.5)",lineHeight:1.6,margin:"14px 0"}}>{prog.description}</p>
-          <button onClick={()=>onUse(prog)} style={{width:"100%",background:`linear-gradient(135deg,${lc},${lc}99)`,border:"none",borderRadius:12,padding:"12px",color:"#000",fontSize:14,fontWeight:700,cursor:"pointer",transition:"transform 0.12s,opacity 0.15s"}}
+          <button onClick={()=>onUse(prog)} style={{width:"100%",background:`linear-gradient(135deg,${lc},${lc}99)`,border:"none",borderRadius:12,padding:"12px",color:"#000",fontSize:14,fontWeight:700,cursor:"pointer"}}
             onPointerDown={e=>e.currentTarget.style.transform="scale(0.97)"} onPointerUp={e=>e.currentTarget.style.transform="scale(1)"} onPointerLeave={e=>e.currentTarget.style.transform="scale(1)"}>
             Начать тренировку →
           </button>
@@ -245,110 +260,109 @@ function ProgramCard({prog,onUse}) {
   );
 }
 
-// ─── INTERVAL ROW (свайп влево = показать кнопку удаления) ───────────────────
-const DELETE_W = 70;
+// ─── INTERVAL ROW: свайп влево = кнопка удалить, перетаскивание за номер ──────
+const SLIDE_W  = 82; // сколько ряд сдвигается
+const DELETE_W = 70; // ширина кнопки удалить (есть 12px зазор)
 
-function IntervalRow({interval,index,total,onChange,onDelete,onMoveUp,onMoveDown}) {
-  const mins=Math.floor(interval.duration/60), secs=interval.duration%60;
+function IntervalRow({interval,index,total,onChange,onDelete,onDragHandleTouch,isDragging}) {
+  const mins=Math.floor(interval.duration/60),secs=interval.duration%60;
   const cfg=IV[interval.type]||IV.slow;
-  const startX=useRef(null), baseX=useRef(0);
+  const startX=useRef(null),baseX=useRef(0),dragging=useRef(false);
   const [open,setOpen]=useState(false);
-  const [live,setLive]=useState(0);      // смещение во время свайпа
-  const dragging=useRef(false);
+  const [liveOff,setLiveOff]=useState(0);
 
-  // итоговое смещение строки
-  const translateX = open ? -DELETE_W + live : live;
-  const animated   = !dragging.current;
+  const tx = open ? -SLIDE_W+liveOff : liveOff;
+  const animated = !dragging.current;
 
-  const onTS=(e)=>{ startX.current=e.touches[0].clientX; baseX.current=open?-DELETE_W:0; dragging.current=true; };
+  const onTS=(e)=>{ startX.current=e.touches[0].clientX; baseX.current=open?-SLIDE_W:0; dragging.current=true; };
   const onTM=(e)=>{
     if(startX.current===null) return;
     const dx=e.touches[0].clientX-startX.current;
-    const next=Math.max(-DELETE_W,Math.min(0,baseX.current+dx));
-    setLive(next-baseX.current);
+    const next=Math.max(-SLIDE_W,Math.min(0,baseX.current+dx));
+    setLiveOff(next-baseX.current);
   };
   const onTE=()=>{
     dragging.current=false;
-    const final=baseX.current+live;
-    setOpen(final<-DELETE_W/2);
-    setLive(0);
+    const final=baseX.current+liveOff;
+    setOpen(final<-SLIDE_W/2);
+    setLiveOff(0);
     startX.current=null;
   };
 
-  const handleDelete=()=>{ setOpen(false); setTimeout(onDelete,200); };
-
   return (
-    // Внешний контейнер даёт отступ между строками — 10px gap
-    <div style={{position:"relative",borderRadius:16,overflow:"hidden",marginBottom:10}}>
-
-      {/* Кнопка удаления — видна только когда open */}
+    <div style={{position:"relative",marginBottom:12,borderRadius:16,overflow:"hidden",
+      opacity:isDragging?0.5:1,
+      transform:isDragging?"scale(0.98)":"scale(1)",
+      transition:"opacity 0.15s,transform 0.15s",
+    }}>
+      {/* Кнопка удалить — позади, с зазором 12px */}
       <div style={{
-        position:"absolute", right:0, top:0, bottom:0, width:DELETE_W,
-        background:"#8b1a1a",
-        display:"flex", alignItems:"center", justifyContent:"center",
-        borderRadius:16, zIndex:0,
-        opacity: open?1:0,
-        transition:"opacity 0.2s ease",
+        position:"absolute",right:0,top:0,bottom:0,width:DELETE_W,
+        background:"#7b1c1c",borderRadius:16,
+        display:"flex",alignItems:"center",justifyContent:"center",
+        flexDirection:"column",gap:3,
+        opacity:open?1:0,transition:"opacity 0.2s",zIndex:0,
       }}>
-        <button onClick={handleDelete} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:8}}>
-          <Icons.Trash size={20}/>
-          <span style={{fontSize:10,fontWeight:600,letterSpacing:"0.05em"}}>УДАЛИТЬ</span>
+        <button onClick={()=>{setOpen(false);setTimeout(onDelete,180);}}
+          style={{background:"none",border:"none",color:"#fff",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"8px 12px"}}>
+          <Icons.Trash size={18}/>
+          <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.05em"}}>УДАЛИТЬ</span>
         </button>
       </div>
 
-      {/* Основная строка */}
-      <div
-        onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={onTE}
+      {/* Основной ряд */}
+      <div onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={onTE}
         style={{
           background:"rgba(255,255,255,0.05)",
           border:`1px solid ${cfg.color}28`,
           borderRadius:16,
-          padding:"12px 14px",
-          display:"flex",
-          alignItems:"center",
-          gap:8,
-          transform:`translateX(${translateX}px)`,
+          padding:"11px 12px",
+          display:"flex",alignItems:"center",gap:8,
+          transform:`translateX(${tx}px)`,
           transition:animated?"transform 0.25s cubic-bezier(0.4,0,0.2,1)":"none",
-          position:"relative",
-          zIndex:1,
-          userSelect:"none",
-          touchAction:"pan-y",
+          position:"relative",zIndex:1,
+          userSelect:"none",touchAction:"pan-y",
           willChange:"transform",
-        }}
-      >
-        {/* Стрелки */}
-        <div style={{display:"flex",flexDirection:"column",gap:0,flexShrink:0}}>
-          <button onClick={onMoveUp} disabled={index===0}
-            style={{background:"none",border:"none",color:index===0?"rgba(255,255,255,0.1)":"rgba(255,255,255,0.4)",cursor:index===0?"default":"pointer",padding:"2px 6px",fontSize:12,lineHeight:1,transition:"color 0.15s"}}>▲</button>
-          <button onClick={onMoveDown} disabled={index===total-1}
-            style={{background:"none",border:"none",color:index===total-1?"rgba(255,255,255,0.1)":"rgba(255,255,255,0.4)",cursor:index===total-1?"default":"pointer",padding:"2px 6px",fontSize:12,lineHeight:1,transition:"color 0.15s"}}>▼</button>
-        </div>
+        }}>
 
-        {/* Номер */}
-        <div style={{fontSize:11,color:"rgba(255,255,255,0.2)",minWidth:14,textAlign:"center",flexShrink:0}}>{index+1}</div>
+        {/* ═══ РУЧКА ПЕРЕТАСКИВАНИЯ — номер ═══ */}
+        <div
+          onTouchStart={(e)=>{ e.stopPropagation(); onDragHandleTouch(e); }}
+          style={{
+            minWidth:28,height:28,borderRadius:8,
+            background:"rgba(255,255,255,0.08)",
+            border:"1px solid rgba(255,255,255,0.12)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            color:"rgba(255,255,255,0.5)",
+            fontSize:13,fontWeight:600,
+            cursor:"grab",flexShrink:0,
+            touchAction:"none",
+          }}>
+          {index+1}
+        </div>
 
         {/* Тип */}
         <div style={{display:"flex",background:"rgba(255,255,255,0.06)",borderRadius:12,padding:3,gap:2,flexShrink:0}}>
           {Object.entries(IV).map(([t,c])=>(
             <button key={t} onClick={()=>onChange({type:t})}
-              style={{background:interval.type===t?c.color:"transparent",border:"none",borderRadius:9,width:38,height:38,fontSize:20,cursor:"pointer",transition:"background 0.18s,transform 0.1s",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              style={{background:interval.type===t?c.color:"transparent",border:"none",borderRadius:9,width:36,height:36,fontSize:19,cursor:"pointer",transition:"background 0.18s",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               {c.emoji}
             </button>
           ))}
         </div>
 
         {/* Название */}
-        <div style={{fontSize:12,color:cfg.color,fontWeight:600,flex:1,minWidth:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",transition:"color 0.2s"}}>{cfg.label}</div>
+        <div style={{fontSize:12,color:cfg.color,fontWeight:600,flex:1,minWidth:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{cfg.label}</div>
 
         {/* Время */}
         <div style={{display:"flex",alignItems:"center",gap:3,flexShrink:0}}>
           <input type="number" min={0} max={99} value={mins}
             onChange={e=>onChange({duration:(parseInt(e.target.value)||0)*60+secs})}
-            style={{width:38,background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:8,color:"#fff",textAlign:"center",fontSize:16,padding:"7px 1px",outline:"none",transition:"border-color 0.15s"}}/>
-          <span style={{color:"rgba(255,255,255,0.3)",fontSize:17}}>:</span>
+            style={{width:38,background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:8,color:"#fff",textAlign:"center",fontSize:15,padding:"7px 1px",outline:"none"}}/>
+          <span style={{color:"rgba(255,255,255,0.3)",fontSize:16}}>:</span>
           <input type="number" min={0} max={59} value={String(secs).padStart(2,"0")}
             onChange={e=>onChange({duration:mins*60+(parseInt(e.target.value)||0)})}
-            style={{width:38,background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:8,color:"#fff",textAlign:"center",fontSize:16,padding:"7px 1px",outline:"none",transition:"border-color 0.15s"}}/>
+            style={{width:38,background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:8,color:"#fff",textAlign:"center",fontSize:15,padding:"7px 1px",outline:"none"}}/>
         </div>
       </div>
     </div>
@@ -361,19 +375,18 @@ function ProfilePage({navigate}) {
   const [editing,setEditing]=useState(false);
   const [hasProfile,setHasProfile]=useState(false);
   const [loading,setLoading]=useState(true);
-  const [ph,phSt]=usePressStyle();
+  const [ph,phSt]=usePress();
 
   useEffect(()=>{
     (async()=>{
       const p=await storage.getProfile();
-      if(p&&(p.name||p.age||p.weight)){ setProfile(p); setHasProfile(true); setEditing(false); }
-      else { const name=TG_USER?`${TG_USER.first_name||""} ${TG_USER.last_name||""}`.trim():""; setProfile(pr=>({...pr,name})); setEditing(true); setHasProfile(false); }
+      if(p&&(p.name||p.age||p.weight)){setProfile(p);setHasProfile(true);setEditing(false);}
+      else{const name=TG_USER?`${TG_USER.first_name||""} ${TG_USER.last_name||""}`.trim():"";setProfile(pr=>({...pr,name}));setEditing(true);setHasProfile(false);}
       setLoading(false);
     })();
   },[]);
 
-  const save=async()=>{ await storage.saveProfile(profile); setHasProfile(true); setEditing(false); };
-  const tgPhoto=TG_USER?.photo_url;
+  const save=async()=>{await storage.saveProfile(profile);setHasProfile(true);setEditing(false);};
   const initials=(profile.name||"?").split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
 
   if(loading) return <Loader/>;
@@ -383,21 +396,27 @@ function ProfilePage({navigate}) {
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:28}}>
         <button onClick={()=>navigate("home")} style={iconBtn}><Icons.ArrowLeft size={20}/></button>
         <h1 style={{fontSize:22,fontWeight:400,color:"#fff",margin:0,flex:1}}>Профиль</h1>
-        {hasProfile&&!editing&&(
-          <button onClick={()=>setEditing(true)} style={iconBtn}><Icons.Edit size={17}/></button>
-        )}
+        {hasProfile&&!editing&&<button onClick={()=>setEditing(true)} style={iconBtn}><Icons.Edit size={17}/></button>}
       </div>
 
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:28}}>
         <div style={{width:90,height:90,borderRadius:"50%",background:"linear-gradient(135deg,#4ade80,#22d3ee)",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:12,overflow:"hidden",boxShadow:"0 0 32px rgba(74,222,128,0.3)",animation:"scaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1)"}}>
-          {tgPhoto?<img src={tgPhoto} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                  :<div style={{fontSize:28,fontWeight:600,color:"#000"}}>{initials}</div>}
+          {TG_USER?.photo_url?<img src={TG_USER.photo_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                              :<div style={{fontSize:28,fontWeight:600,color:"#000"}}>{initials}</div>}
         </div>
-        {TG_USER?.username&&<div style={{fontSize:13,color:"rgba(255,255,255,0.35)",marginTop:2}}>@{TG_USER.username}</div>}
+        {TG_USER&&<div style={{fontSize:14,color:"#fff",fontWeight:500,marginBottom:3}}>{`${TG_USER.first_name||""} ${TG_USER.last_name||""}`.trim()}</div>}
+        {TG_USER?.username&&<div style={{fontSize:13,color:"rgba(255,255,255,0.35)"}}>@{TG_USER.username}</div>}
+        {!TG_USER&&<div style={{fontSize:12,color:"rgba(255,255,255,0.3)",marginTop:6,textAlign:"center"}}>Откройте через Telegram для синхронизации</div>}
+      </div>
+
+      {/* Статус синхронизации */}
+      <div style={{background:tg?"rgba(74,222,128,0.07)":"rgba(255,255,255,0.03)",border:`1px solid ${tg?"rgba(74,222,128,0.2)":"rgba(255,255,255,0.07)"}`,borderRadius:14,padding:"11px 16px",marginBottom:24,display:"flex",alignItems:"center",gap:10}}>
+        <div style={{width:8,height:8,borderRadius:"50%",background:tg?"#4ade80":"rgba(255,255,255,0.2)",flexShrink:0}}/>
+        <div style={{fontSize:13,color:tg?"#4ade80":"rgba(255,255,255,0.35)"}}>{tg?"Данные синхронизируются через Telegram":"Локальное хранилище"}</div>
       </div>
 
       {hasProfile&&!editing&&(
-        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:8}}>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
           {[{label:"Имя",value:profile.name||"—"},{label:"Возраст",value:profile.age?`${profile.age} лет`:"—"},{label:"Вес",value:profile.weight?`${profile.weight} кг`:"—"}].map((f,i)=>(
             <div key={i} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:14,padding:"14px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",animation:`slideUp 0.2s ${i*0.05}s ease both`}}>
               <div style={{fontSize:12,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:"0.07em"}}>{f.label}</div>
@@ -425,12 +444,8 @@ function ProfilePage({navigate}) {
             ))}
           </div>
           <div style={{display:"flex",gap:10}}>
-            {hasProfile&&(
-              <button onClick={()=>setEditing(false)} style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:14,padding:"15px",color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",transition:"background 0.15s"}}>
-                Отмена
-              </button>
-            )}
-            <button onClick={save} style={{...greenBt,flex:2,...phSt}} {...ph}>Сохранить</button>
+            {hasProfile&&<button onClick={()=>setEditing(false)} style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:14,padding:"15px",color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer"}}>Отмена</button>}
+            <button onClick={save} {...ph} style={{...greenBt,...phSt,flex:2}}>Сохранить</button>
           </div>
         </>
       )}
@@ -448,17 +463,17 @@ function HomePage({navigate}) {
   const [lvl,setLvl]=useState("all");
   const [loading,setLoad]=useState(true);
   const [profile,setProfile]=useState(null);
-  const [createPh,createPhSt]=usePressStyle(0.97);
+  const [cph,cphSt]=usePress(0.97);
 
   const load=useCallback(async()=>{
     const [ws,rs,pr]=await Promise.all([storage.getWorkouts(),storage.getResults(),storage.getProfile()]);
-    setWS(ws); setHist([...rs].sort((a,b)=>new Date(b.completedAt)-new Date(a.completedAt))); setProfile(pr); setLoad(false);
+    setWS(ws);setHist([...rs].sort((a,b)=>new Date(b.completedAt)-new Date(a.completedAt)));setProfile(pr);setLoad(false);
   },[]);
 
-  useEffect(()=>{ load(); window.addEventListener("focus",load); return()=>window.removeEventListener("focus",load); },[load]);
+  useEffect(()=>{load();window.addEventListener("focus",load);return()=>window.removeEventListener("focus",load);},[load]);
 
-  const startProgram=async(prog)=>{ const w={id:uid(),name:prog.name,intervals:prog.intervals.map(iv=>({...iv,id:uid()}))}; await storage.saveWorkout(w); navigate("workout",w.id); };
-  const delW=async(id)=>{ await storage.deleteWorkout(id); load(); };
+  const startProg=async(prog)=>{const w={id:uid(),name:prog.name,intervals:prog.intervals.map(iv=>({...iv,id:uid()}))};await storage.saveWorkout(w);navigate("workout",w.id);};
+  const delW=async(id)=>{await storage.deleteWorkout(id);load();};
   const filtered=lvl==="all"?PROGRAMS:PROGRAMS.filter(p=>p.level===lvl);
   const firstName=(profile?.name||TG_USER?.first_name||"").trim().split(" ")[0];
 
@@ -466,7 +481,6 @@ function HomePage({navigate}) {
 
   return (
     <Page>
-      {/* Header */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:22}}>
         <div>
           <div style={{fontSize:11,letterSpacing:"0.14em",color:"rgba(255,255,255,0.3)",textTransform:"uppercase",marginBottom:4}}>Велотренировки</div>
@@ -477,26 +491,22 @@ function HomePage({navigate}) {
         </button>
       </div>
 
-      {/* Tabs */}
       <div style={{display:"flex",background:"rgba(255,255,255,0.05)",borderRadius:14,padding:3,marginBottom:22,gap:2}}>
         {TABS.map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)}
-            style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"9px 6px",borderRadius:11,border:"none",cursor:"pointer",fontSize:12,fontWeight:500,transition:"all 0.2s",background:tab===t.id?"rgba(255,255,255,0.1)":"transparent",color:tab===t.id?"#fff":"rgba(255,255,255,0.4)"}}>
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"9px 6px",borderRadius:11,border:"none",cursor:"pointer",fontSize:12,fontWeight:500,transition:"all 0.2s",background:tab===t.id?"rgba(255,255,255,0.1)":"transparent",color:tab===t.id?"#fff":"rgba(255,255,255,0.4)"}}>
             {t.icon}{t.label}
           </button>
         ))}
       </div>
 
-      {/* MY */}
       {tab==="my"&&<>
-        <button onClick={()=>navigate("create")} {...createPh}
-          style={{...createPhSt,width:"100%",background:"linear-gradient(135deg,#4ade80,#22d3ee)",border:"none",borderRadius:18,padding:"17px 20px",cursor:"pointer",marginBottom:18,display:"flex",alignItems:"center",gap:12,boxShadow:"0 8px 28px rgba(74,222,128,0.28)"}}>
+        <button onClick={()=>navigate("create")} {...cph} style={{...cphSt,width:"100%",background:"linear-gradient(135deg,#4ade80,#22d3ee)",border:"none",borderRadius:18,padding:"17px 20px",cursor:"pointer",marginBottom:18,display:"flex",alignItems:"center",gap:12,boxShadow:"0 8px 28px rgba(74,222,128,0.28)"}}>
           <div style={{width:34,height:34,background:"rgba(0,0,0,0.15)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center"}}><Icons.Plus size={18} style={{color:"#000"}}/></div>
           <span style={{fontSize:16,fontWeight:700,color:"#000"}}>Создать тренировку</span>
         </button>
         {workouts.length>0
-          ? <div style={{display:"flex",flexDirection:"column",gap:10}}>{workouts.map((w,i)=><div key={w.id} style={{animationDelay:`${i*0.04}s`}}><WorkoutCard workout={w} onStart={()=>navigate("workout",w.id)} onEdit={()=>navigate("edit",w.id)} onDelete={()=>delW(w.id)}/></div>)}</div>
-          : <div style={{textAlign:"center",padding:"48px 0",color:"rgba(255,255,255,0.2)",animation:"fadeIn 0.4s ease"}}><div style={{fontSize:44,marginBottom:10}}>🚴</div><div style={{fontSize:16,marginBottom:6}}>Нет сохранённых тренировок</div><div style={{fontSize:13}}>Создайте свою или выберите готовую программу</div></div>
+          ?<div style={{display:"flex",flexDirection:"column",gap:10}}>{workouts.map(w=><WorkoutCard key={w.id} workout={w} onStart={()=>navigate("workout",w.id)} onEdit={()=>navigate("edit",w.id)} onDelete={()=>delW(w.id)}/>)}</div>
+          :<div style={{textAlign:"center",padding:"48px 0",color:"rgba(255,255,255,0.2)"}}><div style={{fontSize:44,marginBottom:10}}>🚴</div><div style={{fontSize:16,marginBottom:6}}>Нет сохранённых тренировок</div><div style={{fontSize:13}}>Создайте свою или выберите готовую программу</div></div>
         }
       </>}
 
@@ -506,33 +516,66 @@ function HomePage({navigate}) {
             <button key={v} onClick={()=>setLvl(v)} style={{padding:"6px 14px",borderRadius:20,border:"none",cursor:"pointer",fontSize:13,fontWeight:500,transition:"all 0.2s",background:lvl===v?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.05)",color:lvl===v?"#fff":"rgba(255,255,255,0.4)"}}>{l}</button>
           ))}
         </div>
-        <div style={{display:"flex",flexDirection:"column",gap:10}}>{filtered.map((p,i)=><div key={p.id} style={{animationDelay:`${i*0.04}s`}}><ProgramCard prog={p} onUse={startProgram}/></div>)}</div>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>{filtered.map(p=><ProgramCard key={p.id} prog={p} onUse={startProg}/>)}</div>
       </>}
 
       {tab==="history"&&(history.length>0
-        ? <div style={{display:"flex",flexDirection:"column",gap:8}}>{history.map((r,i)=><div key={r.id} style={{animationDelay:`${i*0.03}s`}}><HistoryCard result={r} onClick={()=>navigate("details",r.id)}/></div>)}</div>
-        : <div style={{textAlign:"center",padding:"64px 0",color:"rgba(255,255,255,0.2)",animation:"fadeIn 0.4s ease"}}><div style={{fontSize:44,marginBottom:10}}>📋</div><div style={{fontSize:16,marginBottom:6}}>История пуста</div><div style={{fontSize:13}}>Завершите первую тренировку</div></div>
+        ?<div style={{display:"flex",flexDirection:"column",gap:8}}>{history.map(r=><HistoryCard key={r.id} result={r} onClick={()=>navigate("details",r.id)}/>)}</div>
+        :<div style={{textAlign:"center",padding:"64px 0",color:"rgba(255,255,255,0.2)"}}><div style={{fontSize:44,marginBottom:10}}>📋</div><div style={{fontSize:16,marginBottom:6}}>История пуста</div><div style={{fontSize:13}}>Завершите первую тренировку</div></div>
       )}
     </Page>
   );
 }
 
-// ─── CREATE / EDIT ────────────────────────────────────────────────────────────
+// ─── CREATE / EDIT (с drag-to-reorder) ───────────────────────────────────────
 function CreatePage({navigate,editId}) {
-  const [name,setName]=useState(""), [intervals,setIV]=useState([]), [loading,setLoad]=useState(!!editId);
-  const [savePh,savePhSt]=usePressStyle();
+  const [name,setName]=useState("");
+  const [intervals,setIV]=useState([]);
+  const [loading,setLoad]=useState(!!editId);
+  const [sph,sphSt]=usePress();
+
+  // ── Drag reorder state ──
+  const dragFromRef=useRef(null);   // индекс перетаскиваемого элемента
+  const rowRefs=useRef([]);          // DOM-рефы каждой строки
+  const listRef=useRef(null);
 
   useEffect(()=>{
     (async()=>{
-      if(editId){ const w=await storage.getWorkoutById(editId); if(w){setName(w.name);setIV(w.intervals);} }
+      if(editId){const w=await storage.getWorkoutById(editId);if(w){setName(w.name);setIV(w.intervals);}}
       else setIV([{id:uid(),type:"slow",duration:180},{id:uid(),type:"fast",duration:60},{id:uid(),type:"slow",duration:120}]);
       setLoad(false);
     })();
   },[editId]);
 
   const total=intervals.reduce((s,i)=>s+i.duration,0);
-  const moveUp=(i)=>{ if(i===0) return; const a=[...intervals]; [a[i-1],a[i]]=[a[i],a[i-1]]; setIV(a); };
-  const moveDown=(i)=>{ if(i===intervals.length-1) return; const a=[...intervals]; [a[i],a[i+1]]=[a[i+1],a[i]]; setIV(a); };
+
+  // ── Обработчики drag ──
+  const onListTouchMove=useCallback((e)=>{
+    if(dragFromRef.current===null) return;
+    e.preventDefault();
+    const y=e.touches[0].clientY;
+    let toIdx=dragFromRef.current;
+    rowRefs.current.forEach((ref,i)=>{
+      if(!ref) return;
+      const {top,height}=ref.getBoundingClientRect();
+      if(y>top+height*0.5) toIdx=i;
+    });
+    toIdx=Math.min(toIdx,intervals.length-1);
+    if(toIdx!==dragFromRef.current){
+      setIV(prev=>{
+        const arr=[...prev];
+        const [item]=arr.splice(dragFromRef.current,1);
+        arr.splice(toIdx,0,item);
+        dragFromRef.current=toIdx;
+        return arr;
+      });
+    }
+  },[intervals.length]);
+
+  const onListTouchEnd=useCallback(()=>{
+    dragFromRef.current=null;
+  },[]);
+
   const save=async()=>{
     if(!name.trim()){alert("Введите название");return;}
     if(!intervals.length){alert("Добавьте интервал");return;}
@@ -557,20 +600,33 @@ function CreatePage({navigate,editId}) {
       <div style={{marginBottom:16}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
           <div style={fldLbl}>Интервалы</div>
-          {total>0&&<div style={{fontSize:13,color:"rgba(255,255,255,0.3)",transition:"opacity 0.2s"}}>{fmtD(total)}</div>}
-        </div>
-        {intervals.length>0&&<div style={{marginBottom:12}}><IntervalBar intervals={intervals} height={6}/></div>}
-        <div style={{fontSize:12,color:"rgba(255,255,255,0.25)",marginBottom:14}}>
-          ← Свайп влево — удалить · ▲▼ — переместить
+          {total>0&&<div style={{fontSize:13,color:"rgba(255,255,255,0.3)"}}>{fmtD(total)}</div>}
         </div>
 
-        {intervals.map((iv,i)=>(
-          <IntervalRow key={iv.id} interval={iv} index={i} total={intervals.length}
-            onChange={u=>setIV(p=>p.map(x=>x.id===iv.id?{...x,...u}:x))}
-            onDelete={()=>setIV(p=>p.filter(x=>x.id!==iv.id))}
-            onMoveUp={()=>moveUp(i)} onMoveDown={()=>moveDown(i)}
-          />
-        ))}
+        {intervals.length>0&&<div style={{marginBottom:12}}><IntervalBar intervals={intervals} height={6}/></div>}
+
+        <div style={{fontSize:12,color:"rgba(255,255,255,0.25)",marginBottom:14}}>
+          Зажмите номер и перетащите · Свайп влево — удалить
+        </div>
+
+        {/* Список с drag-поддержкой */}
+        <div
+          ref={listRef}
+          onTouchMove={onListTouchMove}
+          onTouchEnd={onListTouchEnd}
+        >
+          {intervals.map((iv,i)=>(
+            <div key={iv.id} ref={el=>rowRefs.current[i]=el}>
+              <IntervalRow
+                interval={iv} index={i} total={intervals.length}
+                onChange={u=>setIV(p=>p.map(x=>x.id===iv.id?{...x,...u}:x))}
+                onDelete={()=>setIV(p=>p.filter(x=>x.id!==iv.id))}
+                onDragHandleTouch={()=>{ dragFromRef.current=i; }}
+                isDragging={false}
+              />
+            </div>
+          ))}
+        </div>
 
         <button onClick={()=>setIV(p=>[...p,{id:uid(),type:"medium",duration:60}])}
           style={{width:"100%",background:"transparent",border:"2px dashed rgba(255,255,255,0.1)",borderRadius:14,color:"rgba(255,255,255,0.35)",fontSize:14,padding:"14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"border-color 0.2s,color 0.2s"}}
@@ -580,7 +636,7 @@ function CreatePage({navigate,editId}) {
         </button>
       </div>
 
-      <button onClick={save} {...savePh} style={{...greenBt,...savePhSt}}>Сохранить тренировку</button>
+      <button onClick={save} {...sph} style={{...greenBt,...sphSt}}>Сохранить тренировку</button>
     </Page>
   );
 }
@@ -590,24 +646,23 @@ function ActiveWorkoutPage({navigate,workoutId}) {
   const [workout,setWO]=useState(null),[phase,setPhase]=useState("ready"),[countdown,setCD]=useState(3);
   const [ivIdx,setIdx]=useState(0),[timeLeft,setTL]=useState(0),[elapsed,setEl]=useState(0);
   const timerRef=useRef(null),elRef=useRef(0),ivRef=useRef(0),woRef=useRef(null);
-  const [playPh,playPhSt]=usePressStyle(0.93);
-  const [stopPh,stopPhSt]=usePressStyle(0.93);
+  const [pph,pphSt]=usePress(0.93),[sph,sphSt]=usePress(0.93);
 
-  useEffect(()=>{ (async()=>{ const w=await storage.getWorkoutById(workoutId); if(!w){navigate("home");return;} setWO(w);woRef.current=w;setTL(w.intervals[0]?.duration||0); })(); },[workoutId]);
+  useEffect(()=>{(async()=>{const w=await storage.getWorkoutById(workoutId);if(!w){navigate("home");return;}setWO(w);woRef.current=w;setTL(w.intervals[0]?.duration||0);})();},[workoutId]);
   useEffect(()=>{
     if(phase!=="countdown") return;
-    if(countdown<=0){ setTL(woRef.current.intervals[0].duration); setPhase("running"); return; }
-    const t=setTimeout(()=>setCD(c=>c-1),1000); return()=>clearTimeout(t);
+    if(countdown<=0){setTL(woRef.current.intervals[0].duration);setPhase("running");return;}
+    const t=setTimeout(()=>setCD(c=>c-1),1000);return()=>clearTimeout(t);
   },[phase,countdown]);
   useEffect(()=>{
     if(phase!=="running"||!woRef.current) return;
     timerRef.current=setInterval(()=>{
-      elRef.current++; setEl(elRef.current);
+      elRef.current++;setEl(elRef.current);
       setTL(prev=>{
         if(prev<=1){
           const next=ivRef.current+1;
-          if(next<woRef.current.intervals.length){ ivRef.current=next; setIdx(next); return woRef.current.intervals[next].duration; }
-          clearInterval(timerRef.current); setPhase("done");
+          if(next<woRef.current.intervals.length){ivRef.current=next;setIdx(next);return woRef.current.intervals[next].duration;}
+          clearInterval(timerRef.current);setPhase("done");
           const r={id:uid(),workoutId:woRef.current.id,workoutName:woRef.current.name,totalDuration:elRef.current,completedIntervals:woRef.current.intervals.length,totalIntervals:woRef.current.intervals.length,completedAt:new Date()};
           storage.saveResult(r).then(()=>setTimeout(()=>navigate("results",r.id),400));
           return 0;
@@ -618,61 +673,46 @@ function ActiveWorkoutPage({navigate,workoutId}) {
     return()=>clearInterval(timerRef.current);
   },[phase]);
 
-  const playPause=()=>{ if(phase==="ready"){setCD(3);setPhase("countdown");} else if(phase==="running"){clearInterval(timerRef.current);setPhase("paused");} else if(phase==="paused") setPhase("running"); };
-  const stop=async()=>{ clearInterval(timerRef.current); if(phase==="ready"){navigate("home");return;} const r={id:uid(),workoutId:woRef.current.id,workoutName:woRef.current.name,totalDuration:elRef.current,completedIntervals:ivRef.current,totalIntervals:woRef.current.intervals.length,completedAt:new Date()}; await storage.saveResult(r); navigate("results",r.id); };
+  const playPause=()=>{if(phase==="ready"){setCD(3);setPhase("countdown");}else if(phase==="running"){clearInterval(timerRef.current);setPhase("paused");}else if(phase==="paused")setPhase("running");};
+  const stop=async()=>{clearInterval(timerRef.current);if(phase==="ready"){navigate("home");return;}const r={id:uid(),workoutId:woRef.current.id,workoutName:woRef.current.name,totalDuration:elRef.current,completedIntervals:ivRef.current,totalIntervals:woRef.current.intervals.length,completedAt:new Date()};await storage.saveResult(r);navigate("results",r.id);};
 
   if(!workout) return <Loader/>;
-  const curr=workout.intervals[ivIdx],next=workout.intervals[ivIdx+1],nextCfg=next?IV[next.type]:null;
+  const curr=workout.intervals[ivIdx],next=workout.intervals[ivIdx+1],nc=next?IV[next.type]:null;
 
   return (
     <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#08080f,#0d1117,#060608)",color:"#fff",display:"flex",flexDirection:"column"}}>
-      <div style={{padding:"20px 20px 0",display:"flex",alignItems:"center",justifyContent:"space-between",animation:"pageIn 0.2s ease"}}>
+      <div style={{padding:"20px 20px 0",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div><div style={{fontSize:17,fontWeight:400}}>{workout.name}</div><div style={{fontSize:13,color:"rgba(255,255,255,0.3)",marginTop:2}}>{ivIdx+1} / {workout.intervals.length} интервал</div></div>
         <button onClick={stop} style={iconBtn}><Icons.X size={20}/></button>
       </div>
-
       <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 20px"}}>
         {phase==="countdown"
-          ? <div style={{textAlign:"center",animation:"scaleIn 0.3s ease"}}>
-              <div style={{fontSize:13,color:"rgba(255,255,255,0.4)",marginBottom:16,letterSpacing:"0.12em"}}>ПРИГОТОВЬТЕСЬ</div>
-              <div style={{fontSize:120,fontWeight:200,lineHeight:1,background:"linear-gradient(135deg,#4ade80,#22d3ee)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{countdown||"GO!"}</div>
-            </div>
-          : <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:"100%",animation:"fadeIn 0.3s ease"}}>
-              <CircularTimer timeRemaining={timeLeft} totalTime={curr.duration} intervalType={curr.type} isWarning={timeLeft<=5&&phase==="running"}/>
-              {next&&<div style={{marginTop:20,textAlign:"center",opacity:0.55}}>
-                <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginBottom:4,letterSpacing:"0.1em"}}>СЛЕДУЮЩИЙ</div>
-                <div style={{fontSize:14,color:nextCfg?.color||"#fff"}}>{nextCfg?.emoji} {nextCfg?.label} — {fmtT(next.duration)}</div>
-              </div>}
-              <div style={{display:"flex",gap:5,marginTop:24,alignItems:"center"}}>
-                {workout.intervals.map((_,i)=><div key={i} style={{height:5,width:i===ivIdx?22:i<ivIdx?14:10,borderRadius:3,background:i<ivIdx?IV[workout.intervals[i].type]?.color||"#4ade80":i===ivIdx?"#fff":"rgba(255,255,255,0.12)",transition:"all 0.4s ease"}}/>)}
-              </div>
-            </div>
+          ?<div style={{textAlign:"center",animation:"scaleIn 0.3s ease"}}><div style={{fontSize:13,color:"rgba(255,255,255,0.4)",marginBottom:16,letterSpacing:"0.12em"}}>ПРИГОТОВЬТЕСЬ</div><div style={{fontSize:120,fontWeight:200,lineHeight:1,background:"linear-gradient(135deg,#4ade80,#22d3ee)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{countdown||"GO!"}</div></div>
+          :<div style={{display:"flex",flexDirection:"column",alignItems:"center",width:"100%",animation:"fadeIn 0.3s ease"}}>
+            <CircularTimer timeRemaining={timeLeft} totalTime={curr.duration} intervalType={curr.type} isWarning={timeLeft<=5&&phase==="running"}/>
+            {next&&<div style={{marginTop:20,textAlign:"center",opacity:0.55}}><div style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginBottom:4,letterSpacing:"0.1em"}}>СЛЕДУЮЩИЙ</div><div style={{fontSize:14,color:nc?.color||"#fff"}}>{nc?.emoji} {nc?.label} — {fmtT(next.duration)}</div></div>}
+            <div style={{display:"flex",gap:5,marginTop:24,alignItems:"center"}}>{workout.intervals.map((_,i)=><div key={i} style={{height:5,width:i===ivIdx?22:i<ivIdx?14:10,borderRadius:3,background:i<ivIdx?IV[workout.intervals[i].type]?.color||"#4ade80":i===ivIdx?"#fff":"rgba(255,255,255,0.12)",transition:"all 0.4s"}}/>)}</div>
+          </div>
         }
       </div>
-
       {phase!=="countdown"&&(
-        <div style={{padding:"20px 20px 44px",display:"flex",alignItems:"center",justifyContent:"center",gap:24,animation:"slideUp 0.3s ease"}}>
-          <button onClick={stop} {...stopPh} style={{...stopPhSt,width:54,height:54,borderRadius:"50%",background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#fff"}}>
-            <Icons.Stop size={20}/>
-          </button>
-          <button onClick={playPause} {...playPh} style={{...playPhSt,width:78,height:78,borderRadius:"50%",background:"linear-gradient(135deg,#4ade80,#22d3ee)",border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"0 0 36px rgba(74,222,128,0.4)",color:"#000"}}>
+        <div style={{padding:"20px 20px 44px",display:"flex",alignItems:"center",justifyContent:"center",gap:24}}>
+          <button onClick={stop} {...sph} style={{...sphSt,width:54,height:54,borderRadius:"50%",background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#fff"}}><Icons.Stop size={20}/></button>
+          <button onClick={playPause} {...pph} style={{...pphSt,width:78,height:78,borderRadius:"50%",background:"linear-gradient(135deg,#4ade80,#22d3ee)",border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"0 0 36px rgba(74,222,128,0.4)",color:"#000"}}>
             {phase==="running"?<Icons.Pause size={28}/>:<Icons.Play size={28}/>}
           </button>
-          <div style={{width:54,textAlign:"center"}}>
-            <div style={{fontSize:10,color:"rgba(255,255,255,0.25)",marginBottom:3,letterSpacing:"0.1em"}}>ПРОШЛО</div>
-            <div style={{fontSize:15,fontWeight:500,color:"rgba(255,255,255,0.5)",fontVariantNumeric:"tabular-nums"}}>{fmtT(elapsed)}</div>
-          </div>
+          <div style={{width:54,textAlign:"center"}}><div style={{fontSize:10,color:"rgba(255,255,255,0.25)",marginBottom:3,letterSpacing:"0.1em"}}>ПРОШЛО</div><div style={{fontSize:15,fontWeight:500,color:"rgba(255,255,255,0.5)",fontVariantNumeric:"tabular-nums"}}>{fmtT(elapsed)}</div></div>
         </div>
       )}
     </div>
   );
 }
 
-// ─── RESULTS PAGE ─────────────────────────────────────────────────────────────
+// ─── RESULTS ──────────────────────────────────────────────────────────────────
 function ResultsPage({navigate,resultId}) {
   const [result,setR]=useState(null);
-  const [ph,phSt]=usePressStyle();
-  useEffect(()=>{ storage.getResultById(resultId).then(r=>{ if(!r) navigate("home"); else setR(r); }); },[resultId]);
+  const [ph,phSt]=usePress();
+  useEffect(()=>{storage.getResultById(resultId).then(r=>{if(!r)navigate("home");else setR(r);});},[resultId]);
   if(!result) return <Loader/>;
   const done=result.completedIntervals===result.totalIntervals;
   return (
@@ -694,16 +734,16 @@ function ResultsPage({navigate,resultId}) {
           </div>
         ))}
       </div>
-      <button onClick={()=>navigate("home")} {...ph} style={{...greenBt,...phSt,maxWidth:400,animation:"slideUp 0.3s 0.42s ease both"}}>На главную</button>
+      <button onClick={()=>navigate("home")} {...ph} style={{...greenBt,...phSt,maxWidth:400}}>На главную</button>
     </div>
   );
 }
 
-// ─── DETAILS PAGE ─────────────────────────────────────────────────────────────
+// ─── DETAILS ──────────────────────────────────────────────────────────────────
 function DetailsPage({navigate,resultId}) {
   const [result,setR]=useState(null);
-  const [ph,phSt]=usePressStyle();
-  useEffect(()=>{ storage.getResultById(resultId).then(r=>{ if(!r) navigate("home"); else setR(r); }); },[resultId]);
+  const [ph,phSt]=usePress();
+  useEffect(()=>{storage.getResultById(resultId).then(r=>{if(!r)navigate("home");else setR(r);});},[resultId]);
   if(!result) return <Loader/>;
   const done=result.completedIntervals===result.totalIntervals;
   const date=new Date(result.completedAt);
@@ -741,7 +781,7 @@ function DetailsPage({navigate,resultId}) {
 // ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [page,setPage]=useState("home"),[param,setParam]=useState(null);
-  const navigate=(to,p=null)=>{ setParam(p); setPage(to); window.scrollTo(0,0); };
+  const navigate=(to,p=null)=>{setParam(p);setPage(to);window.scrollTo(0,0);};
 
   useEffect(()=>{
     const s=document.createElement("style");
