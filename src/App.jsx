@@ -7,22 +7,23 @@ if (tg) {
   tg.ready();
   tg.expand();
   if (tg.requestFullscreen) tg.requestFullscreen();
-  // Не закрывать приложение при случайном свайпе вниз
   if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
 }
 const TG_USER = tg?.initDataUnsafe?.user || null;
 
-// Высчитываем реальный отступ сверху под шапку Telegram
-// --tg-content-safe-area-inset-top появился в TG 7.7+ и учитывает UI Telegram
+// Правильный расчёт отступа под шапку Telegram
+// tg.viewportHeight — высота видимой области (без шапки TG)
+// window.innerHeight — полная высота экрана
+// Разница = высота шапки Telegram
 const TG_TOP = (() => {
-  const cssVar = parseInt(getComputedStyle(document.documentElement)
-    .getPropertyValue("--tg-content-safe-area-inset-top")) || 0;
-  if (cssVar > 0) return cssVar;
-  // Fallback: viewportHeight vs window.innerHeight разница — это шапка TG
-  if (tg?.viewportHeight && tg.viewportHeight < window.innerHeight) {
-    return Math.round(window.innerHeight - tg.viewportHeight) + 8;
-  }
-  return tg ? 56 : 16; // 56px — стандартная шапка Telegram
+  if (!tg) return 16;
+  // Telegram 8+ даёт contentSafeAreaInset
+  if (tg.contentSafeAreaInset?.top > 0) return tg.contentSafeAreaInset.top + 8;
+  // Fallback: разница между полным экраном и viewport TG
+  const diff = window.innerHeight - (tg.viewportHeight || window.innerHeight);
+  if (diff > 10) return diff + 8;
+  // Последний fallback — стандартная шапка TG
+  return 60;
 })();
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
@@ -655,16 +656,224 @@ function ProfilePage({navigate}) {
 }
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
-// Вспомогательные мини-компоненты для главной
-function SectionHeader({title, action, onAction}) {
+function SectionHeader({title}) {
   return (
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-      <div style={{fontSize:13,fontWeight:600,color:"#fff",letterSpacing:"0.01em"}}>{title}</div>
-      {action&&<button onClick={onAction} style={{background:"none",border:"none",color:C.sub,fontSize:12,cursor:"pointer",padding:0,display:"flex",alignItems:"center",gap:3}}>
-        {action} <span style={{fontSize:14}}>›</span>
-      </button>}
+    <div style={{fontSize:17,fontWeight:600,color:"#fff",marginBottom:12,letterSpacing:"-0.01em"}}>{title}</div>
+  );
+}
+
+function RecoCard({prog, onStart}) {
+  const lc = LVC[prog.level]||C.green;
+  const [ph,ps] = usePress(0.96);
+  const ivs = prog.iv.map(iv=>({...iv,t:iv.t,d:iv.d}));
+  return (
+    <div {...ph} onClick={()=>onStart(prog)}
+      style={{...ps,background:"rgba(255,255,255,0.05)",border:`1px solid ${C.border}`,borderRadius:14,padding:"14px",cursor:"pointer",flexShrink:0,width:190}}>
+      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+        <span style={{fontSize:11,fontWeight:700,color:lc,background:`${lc}18`,borderRadius:5,padding:"2px 8px",letterSpacing:"0.07em"}}>{prog.ll.toUpperCase()}</span>
+        <span style={{fontSize:11,color:C.muted}}>{prog.dur} мин</span>
+      </div>
+      <div style={{fontSize:15,fontWeight:500,color:"#fff",marginBottom:10,lineHeight:1.3}}>{prog.name}</div>
+      <IvBar intervals={ivs} h={4}/>
     </div>
   );
+}
+
+function LastResultCard({result, onClick}) {
+  const done = result.completedIntervals===result.totalIntervals;
+  const date = new Date(result.completedAt);
+  const fmt = date.toLocaleDateString("ru-RU",{day:"numeric",month:"short"});
+  const [ph,ps]=usePress(0.97);
+  return (
+    <div {...ph} onClick={onClick}
+      style={{...ps,background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:14,padding:"14px",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
+      <div style={{width:42,height:42,borderRadius:12,background:done?"rgba(74,222,128,0.12)":"rgba(251,146,60,0.12)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:20}}>
+        {done?"✅":"⏱"}
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:15,fontWeight:500,color:"#fff",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{result.workoutName}</div>
+        <div style={{fontSize:13,color:C.sub,marginTop:3,display:"flex",gap:10}}>
+          <span>{fmtD(result.totalDuration)}</span>
+          <span style={{color:done?C.green:"#fb923c"}}>{result.completedIntervals}/{result.totalIntervals} инт.</span>
+        </div>
+      </div>
+      <div style={{fontSize:12,color:C.muted,flexShrink:0}}>{fmt}</div>
+    </div>
+  );
+}
+
+// Выбор уровня — показывается если уровень ещё не выбран
+function LevelPicker({onSelect}) {
+  return (
+    <div style={{animation:"slideUp 0.25s ease both"}}>
+      <div style={{fontSize:18,fontWeight:600,color:"#fff",marginBottom:6}}>Выберите уровень</div>
+      <div style={{fontSize:14,color:C.sub,marginBottom:20,lineHeight:1.5}}>Мы подберём программы, которые подойдут именно вам</div>
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        {[
+          {level:"beginner", label:"Новичок", desc:"Первые тренировки, безопасная нагрузка, пульс в норме", emoji:"🌱", color:C.green},
+          {level:"intermediate", label:"Опытный", desc:"HIIT, пирамиды, смешанные интервалы, 2–3 раза в неделю", emoji:"⚡", color:C.yellow},
+          {level:"pro", label:"Профи", desc:"Табата, VO2max — максимальная интенсивность", emoji:"🏆", color:C.red},
+        ].map(l=>{
+          const [ph,ps]=usePress(0.97);
+          return (
+            <button key={l.level} {...ph} onClick={()=>onSelect(l.level)}
+              style={{...ps,background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:16,padding:"16px",display:"flex",alignItems:"center",gap:14,textAlign:"left",cursor:"pointer",width:"100%"}}>
+              <div style={{width:46,height:46,borderRadius:13,background:`${l.color}14`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:24}}>{l.emoji}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:16,fontWeight:600,color:"#fff",marginBottom:4}}>{l.label}</div>
+                <div style={{fontSize:13,color:C.muted,lineHeight:1.4}}>{l.desc}</div>
+              </div>
+              <div style={{color:C.muted,fontSize:18,flexShrink:0}}>›</div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const TABS = [{id:"my",l:"Мои",icon:<I.Star size={13}/>},{id:"programs",l:"Программы",icon:<I.Book size={13}/>},{id:"history",l:"История",icon:<I.Clock size={13}/>}];
+
+function HomePage({navigate}) {
+  const [tab,setTab]=useState("my");
+  const [workouts,setWS]=useState([]);
+  const [history,setHist]=useState([]);
+  const [lvl,setLvl]=useState("all");
+  const [loading,setLoad]=useState(true);
+  const [profile,setPr]=useState(null);
+  // Уровень пользователя — хранится в localStorage, не в облаке
+  const [userLevel,setUserLevel]=useState(()=>localStorage.getItem("bw_user_level")||"");
+  const [cph,cps]=usePress(0.97);
+
+  const load=useCallback(async()=>{
+    const [ws,rs,pr]=await Promise.all([db.getW(),db.getR(),db.getP()]);
+    setWS(ws);setHist([...rs].sort((a,b)=>new Date(b.completedAt)-new Date(a.completedAt)));setPr(pr);setLoad(false);
+  },[]);
+
+  useEffect(()=>{load();window.addEventListener("focus",load);return()=>window.removeEventListener("focus",load);},[load]);
+
+  const chooseLevel=(l)=>{
+    localStorage.setItem("bw_user_level",l);
+    setUserLevel(l);
+  };
+
+  const startProg=async(prog)=>{
+    const ex=workouts.find(w=>w.id===prog.id);
+    if(ex){navigate("workout",ex.id);return;}
+    const w={id:prog.id,name:prog.name,intervals:prog.iv.map(iv=>({...iv,id:uid()}))};
+    await db.saveW(w);navigate("workout",w.id);
+  };
+  const delW=async(id)=>{await db.delW(id);load();};
+  const delR=async(id)=>{await db.delR(id);load();};
+
+  const filtered=lvl==="all"?PROGS:PROGS.filter(p=>p.level===lvl);
+  const firstName=(profile?.name||TG_USER?.first_name||"").trim().split(" ")[0];
+  const addedIds=new Set(workouts.filter(w=>PROG_IDS.has(w.id)).map(w=>w.id));
+  const myWorkouts=workouts.filter(w=>!PROG_IDS.has(w.id));
+  const myProgs=workouts.filter(w=>PROG_IDS.has(w.id));
+  const hasMyStuff=myWorkouts.length>0||myProgs.length>0;
+
+  // Рекомендации: фильтруем по уровню пользователя
+  const recoProgs = userLevel
+    ? PROGS.filter(p=>p.level===userLevel)
+    : PROGS.slice(0,4);
+
+  if(loading) return <Loader/>;
+
+  return <Page>
+    {/* Header */}
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:22}}>
+      <div>
+        <div style={{fontSize:11,letterSpacing:"0.13em",color:C.muted,textTransform:"uppercase",marginBottom:4}}>Велотренировки</div>
+        <div style={{fontSize:28,fontWeight:300,lineHeight:1.1}}>{firstName?`Привет,\u00A0${firstName}!`:"Тренировки"}</div>
+      </div>
+      <button onClick={()=>navigate("profile")} style={{width:42,height:42,borderRadius:"50%",background:tg?"rgba(74,222,128,0.1)":C.surface,border:`1px solid ${tg?"rgba(74,222,128,0.25)":C.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:tg?C.green:C.text}}>
+        <I.User size={18}/>
+      </button>
+    </div>
+
+    {/* Tabs */}
+    <div style={{display:"flex",background:"rgba(255,255,255,0.04)",borderRadius:12,padding:3,marginBottom:22,gap:2}}>
+      {TABS.map(t=>(
+        <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"9px 4px",borderRadius:9,border:"none",cursor:"pointer",fontSize:12,fontWeight:500,transition:"all 0.18s",background:tab===t.id?"rgba(255,255,255,0.1)":"transparent",color:tab===t.id?"#fff":C.muted}}>
+          {t.icon}{t.l}
+        </button>
+      ))}
+    </div>
+
+    {/* ══ МОИ ══ */}
+    {tab==="my"&&<>
+      {/* Кнопка создать */}
+      <button onClick={()=>navigate("create")} {...cph}
+        style={{...cps,width:"100%",background:"linear-gradient(135deg,#4ade80,#22d3ee)",border:"none",borderRadius:14,padding:"15px 18px",cursor:"pointer",marginBottom:22,display:"flex",alignItems:"center",gap:12,boxShadow:"0 6px 20px rgba(74,222,128,0.2)"}}>
+        <div style={{width:30,height:30,background:"rgba(0,0,0,0.15)",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center"}}><I.Plus size={17} style={{color:"#000"}}/></div>
+        <span style={{fontSize:16,fontWeight:700,color:"#000"}}>Создать тренировку</span>
+      </button>
+
+      {/* Мои тренировки — если есть */}
+      {myWorkouts.length>0&&<>
+        <SectionHeader title="Мои тренировки"/>
+        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
+          {myWorkouts.map(w=><WCard key={w.id} workout={w} onStart={()=>navigate("workout",w.id)} onEdit={()=>navigate("edit",w.id)} onDelete={()=>delW(w.id)}/>)}
+        </div>
+      </>}
+
+      {/* Сохранённые программы — если есть */}
+      {myProgs.length>0&&<>
+        <SectionHeader title="Сохранённые программы"/>
+        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
+          {myProgs.map(w=><WCard key={w.id} workout={w} onStart={()=>navigate("workout",w.id)} onEdit={()=>{}} onDelete={()=>delW(w.id)}/>)}
+        </div>
+      </>}
+
+      {/* Рекомендации — всегда показываем */}
+      {!userLevel
+        ? <LevelPicker onSelect={chooseLevel}/>
+        : <>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+              <div style={{fontSize:17,fontWeight:600,color:"#fff"}}>Рекомендации</div>
+              <button onClick={()=>chooseLevel("")} style={{background:"none",border:"none",color:C.muted,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:3}}>
+                {({beginner:"Новичок",intermediate:"Опытный",pro:"Профи"})[userLevel]} <span style={{color:C.sub}}>· изменить</span>
+              </button>
+            </div>
+            <div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:6,marginBottom:24,scrollbarWidth:"none"}}>
+              {recoProgs.map(p=><RecoCard key={p.id} prog={p} onStart={startProg}/>)}
+            </div>
+          </>
+      }
+
+      {/* История — последние 3 */}
+      {history.length>0&&<>
+        <SectionHeader title="История"/>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {history.slice(0,3).map(r=><LastResultCard key={r.id} result={r} onClick={()=>navigate("details",r.id)}/>)}
+          {history.length>3&&<button onClick={()=>setTab("history")} style={{background:"none",border:`1px solid ${C.border}`,borderRadius:12,padding:"12px",color:C.sub,fontSize:13,cursor:"pointer",textAlign:"center"}}>
+            Показать всю историю ({history.length})
+          </button>}
+        </div>
+      </>}
+    </>}
+
+    {/* ══ ПРОГРАММЫ ══ */}
+    {tab==="programs"&&<>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
+        {[["all","Все"],["beginner","Новичок"],["intermediate","Опытный"],["pro","Профи"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setLvl(v)} style={{padding:"6px 14px",borderRadius:16,border:"none",cursor:"pointer",fontSize:13,fontWeight:500,transition:"all 0.18s",background:lvl===v?"rgba(255,255,255,0.14)":"rgba(255,255,255,0.05)",color:lvl===v?"#fff":C.sub}}>{l}</button>
+        ))}
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>{filtered.map(p=><PCard key={p.id} prog={p} onUse={startProg} added={addedIds.has(p.id)}/>)}</div>
+    </>}
+
+    {/* ══ ИСТОРИЯ ══ */}
+    {tab==="history"&&(history.length>0
+      ?<div style={{display:"flex",flexDirection:"column",gap:8}}>{history.map(r=><HistCard key={r.id} result={r} onClick={()=>navigate("details",r.id)} onDelete={()=>delR(r.id)}/>)}</div>
+      :<div style={{textAlign:"center",padding:"48px 0",color:C.muted}}>
+        <div style={{fontSize:44,marginBottom:12}}>📋</div>
+        <div style={{fontSize:17,marginBottom:6}}>История пуста</div>
+        <div style={{fontSize:14}}>Завершите первую тренировку</div>
+      </div>
+    )}
+  </Page>;
 }
 
 // Компактная карточка рекомендованной программы
