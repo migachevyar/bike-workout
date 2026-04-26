@@ -3,8 +3,27 @@ import { createPortal } from "react-dom";
 
 // ─── TELEGRAM ─────────────────────────────────────────────────────────────────
 const tg = window.Telegram?.WebApp;
-if (tg) { tg.ready(); tg.expand(); if (tg.requestFullscreen) tg.requestFullscreen(); }
+if (tg) {
+  tg.ready();
+  tg.expand();
+  if (tg.requestFullscreen) tg.requestFullscreen();
+  // Не закрывать приложение при случайном свайпе вниз
+  if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
+}
 const TG_USER = tg?.initDataUnsafe?.user || null;
+
+// Высчитываем реальный отступ сверху под шапку Telegram
+// --tg-content-safe-area-inset-top появился в TG 7.7+ и учитывает UI Telegram
+const TG_TOP = (() => {
+  const cssVar = parseInt(getComputedStyle(document.documentElement)
+    .getPropertyValue("--tg-content-safe-area-inset-top")) || 0;
+  if (cssVar > 0) return cssVar;
+  // Fallback: viewportHeight vs window.innerHeight разница — это шапка TG
+  if (tg?.viewportHeight && tg.viewportHeight < window.innerHeight) {
+    return Math.round(window.innerHeight - tg.viewportHeight) + 8;
+  }
+  return tg ? 56 : 16; // 56px — стандартная шапка Telegram
+})();
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
 const cloudGet = (k) => new Promise(res => {
@@ -85,10 +104,14 @@ function usePress(scale=0.96) {
 }
 
 const Page = ({children, pad=true}) => (
-  <div style={{minHeight:"100vh",background:C.bg,color:C.text,boxSizing:"border-box",
-    padding: pad ? "env(safe-area-inset-top, 44px) 16px 24px" : 0,
-    paddingTop: pad ? "max(env(safe-area-inset-top, 44px), 16px)" : 0,
-    animation:"pageIn 0.2s ease both"}}>
+  <div style={{
+    minHeight:"100vh", background:C.bg, color:C.text, boxSizing:"border-box",
+    paddingTop: pad ? `${TG_TOP + 12}px` : 0,
+    paddingLeft: pad ? 16 : 0,
+    paddingRight: pad ? 16 : 0,
+    paddingBottom: pad ? 24 : 0,
+    animation:"pageIn 0.22s ease both"
+  }}>
     {children}
   </div>
 );
@@ -235,23 +258,62 @@ function DurPicker({duration, onChange, onClose}) {
 }
 
 // ─── INTERVAL ROW ─────────────────────────────────────────────────────────────
-const SLIDE = 75;
+const SLIDE = 78;
 
 function IvRow({iv, index, total, onChange, onDelete, dragHandle}) {
   const cfg = IV[iv.t||iv.type] || IV.slow;
   const dur = iv.d || iv.duration || 0;
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [open, setOpen] = useState(false); // swipe state
+  const [open, setOpen] = useState(false);
   const [tx, setTx] = useState(0);
-  const startX = useRef(null), baseX = useRef(0), dragging = useRef(false);
+  const startX = useRef(null);
+  const startY = useRef(null);
+  const baseX = useRef(0);
+  const isHoriz = useRef(false); // определили направление?
+  const dragging = useRef(false);
 
-  const onTS = e => { if(e.target.closest("[data-drag]")) return; startX.current=e.touches[0].clientX; baseX.current=open?-SLIDE:0; dragging.current=true; };
-  const onTM = e => {
-    if(!dragging.current||startX.current===null||e.target.closest("[data-drag]")) return;
-    const dx=e.touches[0].clientX-startX.current;
-    setTx(Math.max(-SLIDE,Math.min(0,baseX.current+dx)));
+  const onTS = e => {
+    if (e.target.closest("[data-drag]")) return;
+    startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
+    baseX.current = open ? -SLIDE : 0;
+    isHoriz.current = false;
+    dragging.current = false;
   };
-  const onTE = () => { dragging.current=false; const opened=tx<-SLIDE/2; setOpen(opened); if(!opened)setTx(0); else setTx(-SLIDE); startX.current=null; };
+
+  const onTM = e => {
+    if (e.target.closest("[data-drag]")) return;
+    if (startX.current === null) return;
+    const dx = e.touches[0].clientX - startX.current;
+    const dy = e.touches[0].clientY - startY.current;
+
+    // Определяем направление только один раз, по первым 6px
+    if (!dragging.current) {
+      if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+      isHoriz.current = Math.abs(dx) > Math.abs(dy);
+      dragging.current = true;
+    }
+
+    if (!isHoriz.current) return; // вертикальный — не мешаем скроллу
+
+    // Горизонтальный свайп — блокируем скролл и закрытие TG
+    e.preventDefault();
+    e.stopPropagation();
+    const next = Math.max(-SLIDE, Math.min(0, baseX.current + dx));
+    setTx(next);
+  };
+
+  const onTE = () => {
+    if (!dragging.current || !isHoriz.current) {
+      startX.current = null;
+      return;
+    }
+    dragging.current = false;
+    const opened = tx < -SLIDE / 2;
+    setOpen(opened);
+    setTx(opened ? -SLIDE : 0);
+    startX.current = null;
+  };
 
   return (
     <div style={{position:"relative",marginBottom:8,borderRadius:14,overflow:"hidden"}}>
@@ -263,7 +325,13 @@ function IvRow({iv, index, total, onChange, onDelete, dragHandle}) {
       </div>
 
       <div onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={onTE}
-        style={{background:"rgba(255,255,255,0.05)",border:`1px solid ${cfg.color}22`,borderRadius:14,padding:"10px 12px",display:"flex",alignItems:"center",gap:8,transform:`translateX(${tx}px)`,transition:dragging.current?"none":"transform 0.22s ease",position:"relative",zIndex:1,userSelect:"none",touchAction:"pan-y"}}>
+        style={{background:"rgba(255,255,255,0.05)",border:`1px solid ${cfg.color}22`,borderRadius:14,padding:"10px 12px",display:"flex",alignItems:"center",gap:8,
+          transform:`translateX(${tx}px)`,
+          transition:(dragging.current && isHoriz.current)?"none":"transform 0.32s cubic-bezier(0.25,0.46,0.45,0.94)",
+          position:"relative",zIndex:1,userSelect:"none",
+          touchAction: open ? "none" : "pan-y",
+          willChange:"transform",
+        }}>
 
         {/* Drag handle */}
         <div data-drag="1" {...dragHandle}
@@ -398,12 +466,29 @@ function HistCard({result, onClick, onDelete}) {
   const [ph,ps] = usePress(0.97);
   const [open, setOpen] = useState(false);
   const [tx, setTx] = useState(0);
-  const startX = useRef(null), dragging = useRef(false);
-  const SLIDE = 75;
+  const startX = useRef(null), startY = useRef(null);
+  const isHoriz = useRef(false), dragging = useRef(false);
+  const SLIDE = 78;
 
-  const onTS = e => { startX.current=e.touches[0].clientX; dragging.current=true; };
-  const onTM = e => { if(!dragging.current) return; const dx=e.touches[0].clientX-startX.current; setTx(Math.max(-SLIDE,Math.min(0,(open?-SLIDE:0)+dx))); };
-  const onTE = () => { dragging.current=false; const o=tx<-SLIDE/2; setOpen(o); setTx(o?-SLIDE:0); startX.current=null; };
+  const onTS = e => { startX.current=e.touches[0].clientX; startY.current=e.touches[0].clientY; isHoriz.current=false; dragging.current=false; };
+  const onTM = e => {
+    if (startX.current===null) return;
+    const dx=e.touches[0].clientX-startX.current;
+    const dy=e.touches[0].clientY-startY.current;
+    if (!dragging.current) {
+      if (Math.abs(dx)<4&&Math.abs(dy)<4) return;
+      isHoriz.current = Math.abs(dx)>Math.abs(dy);
+      dragging.current = true;
+    }
+    if (!isHoriz.current) return;
+    e.preventDefault(); e.stopPropagation();
+    setTx(Math.max(-SLIDE,Math.min(0,(open?-SLIDE:0)+dx)));
+  };
+  const onTE = () => {
+    if (!dragging.current||!isHoriz.current){startX.current=null;return;}
+    dragging.current=false;
+    const o=tx<-SLIDE/2; setOpen(o); setTx(o?-SLIDE:0); startX.current=null;
+  };
 
   return (
     <div style={{position:"relative",marginBottom:8,borderRadius:14,overflow:"hidden"}}>
@@ -413,7 +498,7 @@ function HistCard({result, onClick, onDelete}) {
         </button>
       </div>
       <div {...ph} onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={onTE} onClick={()=>!open&&onClick()}
-        style={{...ps,background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:14,padding:"13px 14px",cursor:"pointer",transform:`translateX(${tx}px) ${ps.transform}`,transition:dragging.current?"transform 0s":"transform 0.22s ease",position:"relative",zIndex:1,userSelect:"none",touchAction:"pan-y"}}>
+        style={{...ps,background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:14,padding:"13px 14px",cursor:"pointer",transform:`translateX(${tx}px)`,transition:(dragging.current&&isHoriz.current)?"none":"transform 0.32s cubic-bezier(0.25,0.46,0.45,0.94)",position:"relative",zIndex:1,userSelect:"none",touchAction:open?"none":"pan-y"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
           <div style={{fontSize:14,fontWeight:500}}>{result.workoutName}</div>
           {done && <I.Check size={16} style={{color:C.green,flexShrink:0}}/>}
@@ -570,6 +655,60 @@ function ProfilePage({navigate}) {
 }
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
+// Вспомогательные мини-компоненты для главной
+function SectionHeader({title, action, onAction}) {
+  return (
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+      <div style={{fontSize:13,fontWeight:600,color:"#fff",letterSpacing:"0.01em"}}>{title}</div>
+      {action&&<button onClick={onAction} style={{background:"none",border:"none",color:C.sub,fontSize:12,cursor:"pointer",padding:0,display:"flex",alignItems:"center",gap:3}}>
+        {action} <span style={{fontSize:14}}>›</span>
+      </button>}
+    </div>
+  );
+}
+
+// Компактная карточка рекомендованной программы
+function RecoCard({prog, onStart}) {
+  const lc = LVC[prog.level]||C.green;
+  const [ph,ps] = usePress(0.96);
+  const ivs = prog.iv.map(iv=>({...iv,t:iv.t,d:iv.d}));
+  return (
+    <div {...ph} onClick={()=>onStart(prog)}
+      style={{...ps,background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:14,padding:"13px 14px",cursor:"pointer",flexShrink:0,width:200}}>
+      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
+        <span style={{fontSize:10,fontWeight:700,color:lc,background:`${lc}18`,borderRadius:5,padding:"2px 7px",letterSpacing:"0.08em"}}>{prog.ll.toUpperCase()}</span>
+        <span style={{fontSize:10,color:C.muted}}>{prog.dur} мин</span>
+      </div>
+      <div style={{fontSize:14,fontWeight:500,color:"#fff",marginBottom:8,lineHeight:1.3}}>{prog.name}</div>
+      <IvBar intervals={ivs} h={4}/>
+    </div>
+  );
+}
+
+// Карточка последней тренировки (история)
+function LastResultCard({result, onClick}) {
+  const done = result.completedIntervals===result.totalIntervals;
+  const date = new Date(result.completedAt);
+  const fmt = date.toLocaleDateString("ru-RU",{day:"numeric",month:"short"});
+  const [ph,ps]=usePress(0.97);
+  return (
+    <div {...ph} onClick={onClick}
+      style={{...ps,background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:14,padding:"13px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
+      <div style={{width:40,height:40,borderRadius:11,background:done?"rgba(74,222,128,0.12)":"rgba(251,146,60,0.12)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+        <span style={{fontSize:18}}>{done?"✅":"⏱"}</span>
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:14,fontWeight:500,color:"#fff",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{result.workoutName}</div>
+        <div style={{fontSize:12,color:C.sub,marginTop:2,display:"flex",gap:10}}>
+          <span>{fmtD(result.totalDuration)}</span>
+          <span style={{color:done?C.green:"#fb923c"}}>{result.completedIntervals}/{result.totalIntervals} инт.</span>
+        </div>
+      </div>
+      <div style={{fontSize:11,color:C.muted,flexShrink:0}}>{fmt}</div>
+    </div>
+  );
+}
+
 const TABS = [{id:"my",l:"Мои",icon:<I.Star size={13}/>},{id:"programs",l:"Программы",icon:<I.Book size={13}/>},{id:"history",l:"История",icon:<I.Clock size={13}/>}];
 
 function HomePage({navigate}) {
@@ -596,24 +735,31 @@ function HomePage({navigate}) {
   };
   const delW=async(id)=>{await db.delW(id);load();};
   const delR=async(id)=>{await db.delR(id);load();};
+
   const filtered=lvl==="all"?PROGS:PROGS.filter(p=>p.level===lvl);
   const firstName=(profile?.name||TG_USER?.first_name||"").trim().split(" ")[0];
   const addedIds=new Set(workouts.filter(w=>PROG_IDS.has(w.id)).map(w=>w.id));
+  // Пользовательские тренировки (не из программ)
+  const myWorkouts=workouts.filter(w=>!PROG_IDS.has(w.id));
+  // Добавленные программы
+  const myProgs=workouts.filter(w=>PROG_IDS.has(w.id));
+  const hasMyStuff = myWorkouts.length>0 || myProgs.length>0;
 
   if(loading) return <Loader/>;
 
   return <Page>
+    {/* ── Header ── */}
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
       <div>
         <div style={{fontSize:10,letterSpacing:"0.14em",color:C.muted,textTransform:"uppercase",marginBottom:3}}>Велотренировки</div>
-        <div style={{fontSize:26,fontWeight:300}}>{firstName?`Привет,\u00A0${firstName}!`:"Тренировки"}</div>
+        <div style={{fontSize:26,fontWeight:300,lineHeight:1.1}}>{firstName?`Привет,\u00A0${firstName}!`:"Тренировки"}</div>
       </div>
-      <button onClick={()=>navigate("profile")} style={{width:40,height:40,borderRadius:"50%",background:tg?"rgba(74,222,128,0.1)":C.surface,border:`1px solid ${tg?"rgba(74,222,128,0.25)":C.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:tg?C.green:C.text}}>
+      <button onClick={()=>navigate("profile")} style={{width:40,height:40,borderRadius:"50%",background:tg?"rgba(74,222,128,0.1)":C.surface,border:`1px solid ${tg?"rgba(74,222,128,0.25)":C.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:tg?C.green:C.text,transition:"background 0.2s"}}>
         <I.User size={17}/>
       </button>
     </div>
 
-    {/* Tabs */}
+    {/* ── Tabs ── */}
     <div style={{display:"flex",background:"rgba(255,255,255,0.04)",borderRadius:12,padding:3,marginBottom:20,gap:2}}>
       {TABS.map(t=>(
         <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:4,padding:"8px 4px",borderRadius:9,border:"none",cursor:"pointer",fontSize:11,fontWeight:500,transition:"all 0.18s",background:tab===t.id?"rgba(255,255,255,0.1)":"transparent",color:tab===t.id?"#fff":C.muted}}>
@@ -622,18 +768,91 @@ function HomePage({navigate}) {
       ))}
     </div>
 
+    {/* ══════════════════ МОИ ══════════════════ */}
     {tab==="my"&&<>
+      {/* Кнопка создать */}
       <button onClick={()=>navigate("create")} {...cph}
-        style={{...cps,width:"100%",background:"linear-gradient(135deg,#4ade80,#22d3ee)",border:"none",borderRadius:16,padding:"15px 18px",cursor:"pointer",marginBottom:14,display:"flex",alignItems:"center",gap:10,boxShadow:"0 6px 24px rgba(74,222,128,0.22)"}}>
-        <div style={{width:30,height:30,background:"rgba(0,0,0,0.15)",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center"}}><I.Plus size={17} style={{color:"#000"}}/></div>
+        style={{...cps,width:"100%",background:"linear-gradient(135deg,#4ade80,#22d3ee)",border:"none",borderRadius:14,padding:"14px 18px",cursor:"pointer",marginBottom:20,display:"flex",alignItems:"center",gap:10,boxShadow:"0 6px 20px rgba(74,222,128,0.2)"}}>
+        <div style={{width:28,height:28,background:"rgba(0,0,0,0.15)",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center"}}><I.Plus size={16} style={{color:"#000"}}/></div>
         <span style={{fontSize:15,fontWeight:700,color:"#000"}}>Создать тренировку</span>
       </button>
-      {workouts.length>0
-        ?<div style={{display:"flex",flexDirection:"column",gap:8}}>{workouts.map(w=><WCard key={w.id} workout={w} onStart={()=>navigate("workout",w.id)} onEdit={()=>navigate("edit",w.id)} onDelete={()=>delW(w.id)}/>)}</div>
-        :<div style={{textAlign:"center",padding:"40px 0",color:C.muted}}><div style={{fontSize:40,marginBottom:8}}>🚴</div><div style={{fontSize:15,marginBottom:4}}>Нет тренировок</div><div style={{fontSize:12}}>Создайте или выберите программу</div></div>
-      }
+
+      {hasMyStuff ? <>
+        {/* Мои тренировки (созданные вручную) */}
+        {myWorkouts.length>0&&<>
+          <SectionHeader title="Мои тренировки" action="Все" onAction={()=>{}}/>
+          <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
+            {myWorkouts.map(w=><WCard key={w.id} workout={w} onStart={()=>navigate("workout",w.id)} onEdit={()=>navigate("edit",w.id)} onDelete={()=>delW(w.id)}/>)}
+          </div>
+        </>}
+
+        {/* Сохранённые программы */}
+        {myProgs.length>0&&<>
+          <SectionHeader title="Сохранённые программы" action="Все программы" onAction={()=>setTab("programs")}/>
+          <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
+            {myProgs.map(w=><WCard key={w.id} workout={w} onStart={()=>navigate("workout",w.id)} onEdit={()=>{}} onDelete={()=>delW(w.id)}/>)}
+          </div>
+        </>}
+
+        {/* Последние тренировки */}
+        {history.length>0&&<>
+          <SectionHeader title="Недавние" action="Вся история" onAction={()=>setTab("history")}/>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {history.slice(0,3).map(r=><LastResultCard key={r.id} result={r} onClick={()=>navigate("details",r.id)}/>)}
+          </div>
+        </>}
+
+      </> : <>
+        {/* ── Пустое состояние: показываем рекомендации ── */}
+        <div style={{marginBottom:8}}>
+          <SectionHeader title="Рекомендуем начать" action="Все программы" onAction={()=>setTab("programs")}/>
+          <div style={{fontSize:12,color:C.muted,marginBottom:12}}>Выберите готовую программу — она сохранится в ваших тренировках</div>
+
+          {/* Горизонтальный скролл карточек */}
+          <div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:4,marginBottom:20,scrollbarWidth:"none"}}>
+            {PROGS.slice(0,4).map(p=><RecoCard key={p.id} prog={p} onStart={startProg}/>)}
+          </div>
+        </div>
+
+        {/* По целям */}
+        <SectionHeader title="По целям"/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
+          {[
+            {emoji:"🔥",label:"Жиросжигание",desc:"HIIT и интервалы",progs:PROGS.filter(p=>p.goal==="fat"),color:C.red},
+            {emoji:"🫀",label:"Выносливость",desc:"Аэробные нагрузки",progs:PROGS.filter(p=>p.goal==="endurance"),color:C.cyan},
+          ].map(goal=>(
+            <button key={goal.label} onClick={()=>{setTab("programs");}} style={{background:`${goal.color}0d`,border:`1px solid ${goal.color}25`,borderRadius:14,padding:"14px 12px",textAlign:"left",cursor:"pointer",transition:"transform 0.12s"}}>
+              <div style={{fontSize:22,marginBottom:6}}>{goal.emoji}</div>
+              <div style={{fontSize:14,fontWeight:600,color:"#fff",marginBottom:3}}>{goal.label}</div>
+              <div style={{fontSize:11,color:C.muted,marginBottom:8}}>{goal.desc}</div>
+              <div style={{fontSize:11,color:goal.color}}>{goal.progs.length} программы</div>
+            </button>
+          ))}
+        </div>
+
+        {/* По уровню */}
+        <SectionHeader title="По уровню"/>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {[
+            {level:"beginner",label:"Новичок",desc:"Первые шаги, безопасная нагрузка",emoji:"🌱",color:C.green},
+            {level:"intermediate",label:"Опытный",desc:"HIIT, пирамиды, смешанные интервалы",emoji:"⚡",color:C.yellow},
+            {level:"pro",label:"Профи",desc:"Табата, VO2max — максимальная нагрузка",emoji:"🏆",color:C.red},
+          ].map(lvlItem=>(
+            <button key={lvlItem.level} onClick={()=>{setTab("programs");setLvl(lvlItem.level);}}
+              style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"13px 14px",display:"flex",alignItems:"center",gap:12,textAlign:"left",cursor:"pointer",transition:"background 0.15s,transform 0.12s",width:"100%"}}>
+              <div style={{width:40,height:40,borderRadius:11,background:`${lvlItem.color}12`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:20}}>{lvlItem.emoji}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:14,fontWeight:600,color:"#fff",marginBottom:2}}>{lvlItem.label}</div>
+                <div style={{fontSize:12,color:C.muted}}>{lvlItem.desc}</div>
+              </div>
+              <div style={{fontSize:11,color:lvlItem.color,fontWeight:600,flexShrink:0}}>{PROGS.filter(p=>p.level===lvlItem.level).length} пр.</div>
+            </button>
+          ))}
+        </div>
+      </>}
     </>}
 
+    {/* ══════════════════ ПРОГРАММЫ ══════════════════ */}
     {tab==="programs"&&<>
       <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
         {[["all","Все"],["beginner","Новичок"],["intermediate","Опытный"],["pro","Профи"]].map(([v,l])=>(
@@ -643,9 +862,10 @@ function HomePage({navigate}) {
       <div style={{display:"flex",flexDirection:"column",gap:8}}>{filtered.map(p=><PCard key={p.id} prog={p} onUse={startProg} added={addedIds.has(p.id)}/>)}</div>
     </>}
 
+    {/* ══════════════════ ИСТОРИЯ ══════════════════ */}
     {tab==="history"&&(history.length>0
       ?<div>{history.map(r=><HistCard key={r.id} result={r} onClick={()=>navigate("details",r.id)} onDelete={()=>delR(r.id)}/>)}</div>
-      :<div style={{textAlign:"center",padding:"40px 0",color:C.muted}}><div style={{fontSize:40,marginBottom:8}}>📋</div><div style={{fontSize:15}}>История пуста</div></div>
+      :<div style={{textAlign:"center",padding:"40px 0",color:C.muted}}><div style={{fontSize:40,marginBottom:8}}>📋</div><div style={{fontSize:15,marginBottom:4}}>История пуста</div><div style={{fontSize:12}}>Завершите первую тренировку</div></div>
     )}
   </Page>;
 }
@@ -811,59 +1031,91 @@ function ActivePage({navigate,workoutId}) {
   const glow=isWarn?"rgba(239,68,68,0.5)":cfg.glow;
 
   return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#08080f,#0d1117,#060608)",color:"#fff",display:"flex",flexDirection:"column",paddingTop:"env(safe-area-inset-top,44px)"}}>
+    <div style={{height:"100vh",background:"linear-gradient(170deg,#08080f 0%,#0d1117 60%,#060608 100%)",color:"#fff",display:"flex",flexDirection:"column",paddingTop:`${TG_TOP}px`,boxSizing:"border-box",overflow:"hidden"}}>
       {/* Header */}
-      <div style={{padding:"12px 16px 0",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div><div style={{fontSize:16,fontWeight:500}}>{workout.name}</div><div style={{fontSize:12,color:C.sub,marginTop:1}}>{ivIdx+1} / {workout.intervals.length} интервал</div></div>
-        <IconBtn onClick={stop}><I.X size={18}/></IconBtn>
+      <div style={{padding:"10px 16px 0",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <div>
+          <div style={{fontSize:15,fontWeight:500}}>{workout.name}</div>
+          <div style={{fontSize:11,color:C.sub,marginTop:1}}>Интервал {ivIdx+1} из {workout.intervals.length}</div>
+        </div>
+        <IconBtn onClick={stop} style={{background:"rgba(255,255,255,0.05)"}}><I.X size={18}/></IconBtn>
       </div>
-
+      {/* Thin progress bar */}
+      <div style={{margin:"8px 16px 0",height:3,background:"rgba(255,255,255,0.07)",borderRadius:2,flexShrink:0,overflow:"hidden"}}>
+        <div style={{height:"100%",width:`${((ivIdx)/workout.intervals.length)*100}%`,background:cfg.color,borderRadius:2,transition:"width 0.6s ease"}}/>
+      </div>
       {/* Timer */}
-      <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 20px"}}>
+      <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 20px",minHeight:0}}>
         {phase==="countdown"
-          ?<div style={{textAlign:"center"}}><div style={{fontSize:12,color:C.sub,marginBottom:12,letterSpacing:"0.12em"}}>ПРИГОТОВЬТЕСЬ</div><div style={{fontSize:110,fontWeight:200,lineHeight:1,background:"linear-gradient(135deg,#4ade80,#22d3ee)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{cd||"GO!"}</div></div>
+          ?<div style={{textAlign:"center"}}>
+            <div style={{fontSize:11,color:C.sub,marginBottom:14,letterSpacing:"0.14em"}}>ПРИГОТОВЬТЕСЬ</div>
+            <div style={{fontSize:120,fontWeight:100,lineHeight:1,background:"linear-gradient(135deg,#4ade80,#22d3ee)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{cd||"GO!"}</div>
+          </div>
           :<div style={{display:"flex",flexDirection:"column",alignItems:"center",width:"100%"}}>
-            {/* Circular timer */}
-            <div style={{position:"relative",width:296,height:296}}>
-              <svg width={296} height={296} style={{transform:"rotate(-90deg)"}}>
-                <circle cx={148} cy={148} r={R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={14}/>
-                <circle cx={148} cy={148} r={R} fill="none" stroke={color} strokeWidth={14} strokeLinecap="round"
-                  strokeDasharray={circ} strokeDashoffset={circ*(1-prog)}
-                  style={{transition:"stroke-dashoffset 0.85s cubic-bezier(0.4,0,0.2,1),stroke 0.4s",filter:`drop-shadow(0 0 16px ${glow})`}}/>
-              </svg>
-              <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-                <div style={{fontSize:26,marginBottom:4}}>{cfg.emoji}</div>
-                <div style={{fontSize:12,fontWeight:600,letterSpacing:"0.12em",textTransform:"uppercase",color,marginBottom:6}}>{cfg.label}</div>
-                <div style={{fontSize:64,fontWeight:200,fontVariantNumeric:"tabular-nums",lineHeight:1,letterSpacing:"-0.02em"}}>{fmtT(tLeft)}</div>
-              </div>
+            {/* Timer ring */}
+            {(()=>{
+              const Rr=118,cr=2*Math.PI*Rr,pr=curr.d>0?tLeft/curr.d:0;
+              const col=isWarn?"#ef4444":cfg.color,gl=isWarn?"rgba(239,68,68,0.5)":cfg.glow;
+              return (
+                <div style={{position:"relative",width:268,height:268,flexShrink:0}}>
+                  <svg width={268} height={268} style={{transform:"rotate(-90deg)"}}>
+                    <circle cx={134} cy={134} r={Rr} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={18}/>
+                    <circle cx={134} cy={134} r={Rr} fill="none" stroke={col} strokeWidth={18} strokeLinecap="round"
+                      strokeDasharray={cr} strokeDashoffset={cr*(1-pr)}
+                      style={{transition:"stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1),stroke 0.4s",filter:`drop-shadow(0 0 22px ${gl})`}}/>
+                  </svg>
+                  <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+                    <div style={{fontSize:30,marginBottom:4}}>{cfg.emoji}</div>
+                    <div style={{fontSize:11,fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:col,marginBottom:8}}>{cfg.label}</div>
+                    <div style={{fontSize:66,fontWeight:100,fontVariantNumeric:"tabular-nums",lineHeight:1,letterSpacing:"-0.03em"}}>{fmtT(tLeft)}</div>
+                  </div>
+                </div>
+              );
+            })()}
+            {/* Stats */}
+            <div style={{display:"flex",gap:10,marginTop:16,width:"100%",maxWidth:268}}>
+              {[
+                {label:"ПРОШЛО", val:fmtT(elapsed), accent:false},
+                {label:"ИНТЕРВАЛ", val:`${ivIdx+1}/${workout.intervals.length}`, accent:true},
+                {label:"ОСТАЛОСЬ", val:fmtT(Math.max(0,workout.intervals.slice(ivIdx).reduce((s,i)=>s+i.d,0)-ivInitDur.current+tLeft)), accent:false},
+              ].map((s,i)=>(
+                <div key={i} style={{flex:1,background:s.accent?`${cfg.color}12`:"rgba(255,255,255,0.05)",border:s.accent?`1px solid ${cfg.color}25`:"none",borderRadius:12,padding:"9px 8px",textAlign:"center"}}>
+                  <div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em",marginBottom:3}}>{s.label}</div>
+                  <div style={{fontSize:16,fontWeight:300,color:s.accent?cfg.color:"#fff",fontVariantNumeric:"tabular-nums"}}>{s.val}</div>
+                </div>
+              ))}
             </div>
-
-            {/* Next / Finish — fixed height so pause text doesn't jump */}
-            <div style={{height:48,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",marginTop:16}}>
+            {/* Next/Pause/Finish */}
+            <div style={{height:40,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",marginTop:10}}>
               {phase==="paused"
-                ?<div style={{fontSize:13,color:C.sub,letterSpacing:"0.1em"}}>⏸ ПАУЗА</div>
+                ?<div style={{fontSize:12,color:C.sub,letterSpacing:"0.12em"}}>⏸ ПАУЗА</div>
                 :next
-                  ?<><div style={{fontSize:11,color:C.muted,marginBottom:3,letterSpacing:"0.1em"}}>СЛЕДУЮЩИЙ</div><div style={{fontSize:14,color:nc?.color||"#fff"}}>{nc?.emoji} {nc?.label} — {fmtT(next.d)}</div></>
-                  :<><div style={{fontSize:11,color:C.muted,marginBottom:3,letterSpacing:"0.1em"}}>ДАЛЬШЕ</div><div style={{fontSize:14,color:C.green,display:"flex",alignItems:"center",gap:6}}><I.Flag size={13} style={{color:C.green}}/>Финиш</div></>
+                  ?<div style={{textAlign:"center"}}><div style={{fontSize:9,color:C.muted,marginBottom:2,letterSpacing:"0.1em"}}>СЛЕДУЮЩИЙ</div><div style={{fontSize:13,color:nc?.color||"#fff",fontWeight:500}}>{nc?.emoji} {nc?.label} — {fmtT(next.d)}</div></div>
+                  :<div style={{textAlign:"center"}}><div style={{fontSize:9,color:C.muted,marginBottom:2,letterSpacing:"0.1em"}}>ДАЛЬШЕ</div><div style={{fontSize:13,color:C.green,fontWeight:500}}>🏁 Финиш!</div></div>
               }
             </div>
-
-            {/* Progress dots */}
-            <div style={{display:"flex",gap:4,marginTop:12,alignItems:"center"}}>
-              {workout.intervals.map((_,i)=><div key={i} style={{height:4,width:i===ivIdx?20:i<ivIdx?12:8,borderRadius:2,background:i<ivIdx?IV[workout.intervals[i].t]?.color||C.green:i===ivIdx?"#fff":"rgba(255,255,255,0.1)",transition:"all 0.35s"}}/>)}
+            {/* Dots */}
+            <div style={{display:"flex",gap:3,marginTop:8,alignItems:"center",flexWrap:"wrap",justifyContent:"center",maxWidth:250}}>
+              {workout.intervals.map((_,i)=>(
+                <div key={i} style={{height:4,width:i===ivIdx?18:i<ivIdx?10:7,borderRadius:2,background:i<ivIdx?IV[workout.intervals[i].t]?.color||C.green:i===ivIdx?"#fff":"rgba(255,255,255,0.1)",transition:"all 0.4s cubic-bezier(0.4,0,0.2,1)"}}/>
+              ))}
             </div>
           </div>
         }
       </div>
-
       {/* Controls */}
       {phase!=="countdown"&&(
-        <div style={{padding:"16px 20px",paddingBottom:"max(28px,env(safe-area-inset-bottom,28px))",display:"flex",alignItems:"center",justifyContent:"center",gap:22}}>
-          <button onClick={stop} {...sph} style={{...sps,width:52,height:52,borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#fff"}}><I.Stop size={19}/></button>
-          <button onClick={playPause} {...pph} style={{...pps,width:76,height:76,borderRadius:"50%",background:"linear-gradient(135deg,#4ade80,#22d3ee)",border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"0 0 32px rgba(74,222,128,0.35)",color:"#000"}}>
-            {phase==="running"?<I.Pause size={26}/>:<I.Play size={26}/>}
+        <div style={{flexShrink:0,padding:"14px 20px",paddingBottom:"max(20px,env(safe-area-inset-bottom,20px))",display:"flex",alignItems:"center",justifyContent:"center",gap:24}}>
+          <button onClick={stop} {...sph} style={{...sps,width:52,height:52,borderRadius:"50%",background:"rgba(255,255,255,0.07)",border:`1px solid rgba(255,255,255,0.1)`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#fff"}}>
+            <I.Stop size={19}/>
           </button>
-          <div style={{width:52,textAlign:"center"}}><div style={{fontSize:10,color:C.muted,marginBottom:2,letterSpacing:"0.1em"}}>ПРОШЛО</div><div style={{fontSize:14,fontWeight:500,color:C.sub,fontVariantNumeric:"tabular-nums"}}>{fmtT(elapsed)}</div></div>
+          <button onClick={playPause} {...pph} style={{...pps,width:78,height:78,borderRadius:"50%",background:`linear-gradient(135deg,${cfg.color},${cfg.color}bb)`,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:`0 0 36px ${cfg.glow}`,color:"#000"}}>
+            {phase==="running"?<I.Pause size={27}/>:<I.Play size={27}/>}
+          </button>
+          <div style={{width:52,textAlign:"center"}}>
+            <div style={{fontSize:9,color:C.muted,marginBottom:3,letterSpacing:"0.1em"}}>ТЕМП</div>
+            <div style={{fontSize:20}}>{cfg.emoji}</div>
+          </div>
         </div>
       )}
     </div>
