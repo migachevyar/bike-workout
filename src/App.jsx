@@ -11,20 +11,8 @@ if (tg) {
 }
 const TG_USER = tg?.initDataUnsafe?.user || null;
 
-// Правильный расчёт отступа под шапку Telegram
-// tg.viewportHeight — высота видимой области (без шапки TG)
-// window.innerHeight — полная высота экрана
-// Разница = высота шапки Telegram
-const TG_TOP = (() => {
-  if (!tg) return 16;
-  // Telegram 8+ даёт contentSafeAreaInset
-  if (tg.contentSafeAreaInset?.top > 0) return tg.contentSafeAreaInset.top + 8;
-  // Fallback: разница между полным экраном и viewport TG
-  const diff = window.innerHeight - (tg.viewportHeight || window.innerHeight);
-  if (diff > 10) return diff + 8;
-  // Последний fallback — стандартная шапка TG
-  return 60;
-})();
+// Отступ сверху — шапка Telegram (60px) + выемка iPhone
+const SAFE_TOP_CSS = "calc(60px + env(safe-area-inset-top, 0px))";
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
 const cloudGet = (k) => new Promise(res => {
@@ -107,7 +95,7 @@ function usePress(scale=0.96) {
 const Page = ({children, pad=true}) => (
   <div style={{
     minHeight:"100vh", background:C.bg, color:C.text, boxSizing:"border-box",
-    paddingTop: pad ? `${TG_TOP + 12}px` : 0,
+    paddingTop: pad ? SAFE_TOP_CSS : 0,
     paddingLeft: pad ? 16 : 0,
     paddingRight: pad ? 16 : 0,
     paddingBottom: pad ? 24 : 0,
@@ -1037,7 +1025,7 @@ function ActivePage({navigate,workoutId}) {
   const glow=isWarn?"rgba(239,68,68,0.5)":cfg.glow;
 
   return (
-    <div style={{height:"100vh",background:"linear-gradient(170deg,#08080f 0%,#0d1117 60%,#060608 100%)",color:"#fff",display:"flex",flexDirection:"column",paddingTop:`${TG_TOP}px`,boxSizing:"border-box",overflow:"hidden"}}>
+    <div style={{height:"100vh",background:"linear-gradient(170deg,#08080f 0%,#0d1117 60%,#060608 100%)",color:"#fff",display:"flex",flexDirection:"column",paddingTop:SAFE_TOP_CSS,boxSizing:"border-box",overflow:"hidden"}}>
       {/* Header */}
       <div style={{padding:"10px 16px 0",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
         <div>
@@ -1168,7 +1156,7 @@ function DetailsPage({navigate,resultId}) {
   const done=result.completedIntervals===result.totalIntervals;
   const date=new Date(result.completedAt);
   return (
-    <div style={{minHeight:"100vh",background:C.bg,color:C.text,padding:"env(safe-area-inset-top,44px) 16px 24px",boxSizing:"border-box",animation:"pageIn 0.2s ease"}}>
+    <div style={{minHeight:"100vh",background:C.bg,color:C.text,paddingTop:SAFE_TOP_CSS,paddingLeft:16,paddingRight:16,paddingBottom:24,boxSizing:"border-box",animation:"pageIn 0.2s ease"}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20,paddingBottom:16,borderBottom:`1px solid ${C.border}`}}>
         <IconBtn onClick={()=>navigate("home")}><I.Back size={18}/></IconBtn>
         <div style={{fontSize:18,fontWeight:500}}>Детали тренировки</div>
