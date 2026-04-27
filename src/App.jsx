@@ -11,7 +11,9 @@ if (tg) {
 }
 const TG_USER = tg?.initDataUnsafe?.user || null;
 
-// Отступ сверху — шапка Telegram (60px) + выемка iPhone
+// Telegram сам выставляет --tg-safe-area-inset-top и --tg-content-safe-area-inset-top
+// Первая — высота системного safe area (notch), вторая — высота шапки TG
+// Вместе они дают правильный отступ под весь UI Telegram
 const SAFE_TOP_CSS = "calc(60px + env(safe-area-inset-top, 0px))";
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
@@ -583,7 +585,8 @@ function ProfilePage({navigate}) {
   const [has,setHas] = useState(false);
   const [loading,setLoad] = useState(true);
   const userLevel = localStorage.getItem("bw_user_level")||"";
-  const levelLabel = {beginner:"Новичок",intermediate:"Опытный",pro:"Профи"}[userLevel]||"";
+  const levelLabel = {beginner:"Новичок",intermediate:"Опытный",pro:"Профи"}[userLevel]||"Не выбран";
+  const levelColor = LVC[userLevel]||C.muted;
 
   useEffect(()=>{(async()=>{
     const p=await db.getP();
@@ -597,86 +600,96 @@ function ProfilePage({navigate}) {
   })();},[]);
 
   const save=async()=>{await db.saveP(profile);setHas(true);setEditing(false);};
-  const initials=(profile.name||"?").split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+  const displayName = profile.name||TG_USER?.first_name||"";
+  const initials = displayName.split(" ").filter(Boolean).map(w=>w[0]).join("").toUpperCase().slice(0,2)||"?";
+  const photoUrl = TG_USER?.photo_url||null;
   if(loading) return <Loader/>;
 
   return (
-    <div style={{minHeight:"100vh",background:C.bg,color:C.text,boxSizing:"border-box",paddingTop:SAFE_TOP_CSS,paddingLeft:16,paddingRight:16,paddingBottom:32}}>
+    <div style={{minHeight:"100vh",background:C.bg,color:C.text,boxSizing:"border-box",
+      paddingTop:SAFE_TOP_CSS,paddingLeft:16,paddingRight:16,paddingBottom:32}}>
 
-      {/* Header с кнопками — фиксированная высота строки */}
-      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:28,height:44}}>
+      {/* Header */}
+      <div style={{display:"flex",alignItems:"center",gap:10,height:44,marginBottom:24}}>
         <IconBtn onClick={()=>navigate("home")} style={{flexShrink:0}}><I.Back size={18}/></IconBtn>
         <div style={{fontSize:20,fontWeight:600,flex:1}}>Профиль</div>
-        {has&&!editing&&<IconBtn onClick={()=>setEditing(true)} style={{flexShrink:0}}><I.Edit size={16}/></IconBtn>}
+        {has&&!editing&&(
+          <IconBtn onClick={()=>setEditing(true)} style={{flexShrink:0}}><I.Edit size={16}/></IconBtn>
+        )}
       </div>
 
-      {/* Аватар слева + инфо справа */}
-      <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:28,padding:"18px 16px",background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:18}}>
-        {/* Фото */}
-        <div style={{width:72,height:72,borderRadius:"50%",background:"linear-gradient(135deg,#4ade80,#22d3ee)",flexShrink:0,overflow:"hidden",boxShadow:"0 0 20px rgba(74,222,128,0.2)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-          {TG_USER?.photo_url
-            ?<img src={TG_USER.photo_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-            :<div style={{fontSize:24,fontWeight:700,color:"#000"}}>{initials}</div>
-          }
-        </div>
-        {/* Инфо */}
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:18,fontWeight:600,color:"#fff",marginBottom:4,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
-            {profile.name || TG_USER?.first_name || "—"}
+      {/* ══ VIEW MODE ══ */}
+      {!editing&&<>
+        {/* Карточка: фото слева, имя+данные справа */}
+        <div style={{background:"rgba(255,255,255,0.05)",border:`1px solid ${C.border}`,borderRadius:18,padding:"20px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:16}}>
+          {/* Аватар */}
+          <div style={{width:70,height:70,borderRadius:"50%",flexShrink:0,overflow:"hidden",background:"linear-gradient(135deg,#4ade80,#22d3ee)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 24px rgba(74,222,128,0.22)"}}>
+            {photoUrl
+              ?<img src={photoUrl} referrerPolicy="no-referrer" alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              :<div style={{fontSize:22,fontWeight:700,color:"#000"}}>{initials}</div>
+            }
           </div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-            {profile.age&&<span style={{fontSize:13,color:C.sub}}>{profile.age} лет</span>}
-            {profile.weight&&<span style={{fontSize:13,color:C.sub}}>· {profile.weight} кг</span>}
-            {levelLabel&&<span style={{fontSize:12,fontWeight:600,color:LVC[userLevel]||C.green,background:`${LVC[userLevel]||C.green}15`,borderRadius:6,padding:"2px 8px"}}>{levelLabel}</span>}
-          </div>
-          {TG_USER?.username&&<div style={{fontSize:12,color:C.muted,marginTop:4}}>@{TG_USER.username}</div>}
-        </div>
-      </div>
-
-      {/* View mode */}
-      {has&&!editing&&(
-        <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
-          {[
-            {l:"Имя",    v:profile.name||"—"},
-            {l:"Возраст",v:profile.age?`${profile.age} лет`:"—"},
-            {l:"Вес",    v:profile.weight?`${profile.weight} кг`:"—"},
-            {l:"Уровень",v:levelLabel||"Не выбран"},
-          ].map((f,i)=>(
-            <div key={i} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div style={{fontSize:12,color:C.sub,textTransform:"uppercase",letterSpacing:"0.07em"}}>{f.l}</div>
-              <div style={{fontSize:16,fontWeight:500}}>{f.v}</div>
+          {/* Данные */}
+          <div style={{flex:1,minWidth:0}}>
+            {/* Имя */}
+            <div style={{fontSize:20,fontWeight:600,color:"#fff",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",marginBottom:4}}>
+              {displayName||"—"}
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Edit mode */}
-      {editing&&(
-        <>
-          {[
-            {k:"name",  l:"Имя",     pl:"Введите имя", type:"text"},
-            {k:"age",   l:"Возраст", pl:"—",            type:"number", s:"лет"},
-            {k:"weight",l:"Вес",     pl:"—",            type:"number", s:"кг"},
-          ].map(f=>(
-            <div key={f.k} style={{marginBottom:14}}>
-              <div style={{fontSize:12,color:C.sub,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:6}}>{f.l}</div>
-              <div style={{position:"relative"}}>
-                <input
-                  value={profile[f.k]||""} type={f.type}
-                  onChange={e=>setProfile(p=>({...p,[f.k]:e.target.value}))}
-                  placeholder={f.pl}
-                  style={{width:"100%",background:"rgba(255,255,255,0.05)",border:`1px solid ${C.border}`,borderRadius:12,color:"#fff",fontSize:15,padding:`13px ${f.s?"40px":16}px 13px 16px`,outline:"none",boxSizing:"border-box"}}
-                />
-                {f.s&&<span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:C.muted,fontSize:13,pointerEvents:"none"}}>{f.s}</span>}
-              </div>
+            {/* Возраст */}
+            {profile.age&&(
+              <div style={{fontSize:14,color:C.sub,marginBottom:6}}>{profile.age} лет</div>
+            )}
+            {/* Вес + уровень */}
+            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              {profile.weight&&(
+                <div style={{fontSize:14,color:C.sub}}>{profile.weight} кг</div>
+              )}
+              {userLevel&&(
+                <span style={{fontSize:12,fontWeight:700,color:levelColor,background:`${levelColor}18`,borderRadius:6,padding:"2px 9px"}}>
+                  {levelLabel}
+                </span>
+              )}
             </div>
-          ))}
-          <div style={{display:"flex",gap:10,marginTop:8}}>
-            {has&&<button onClick={()=>setEditing(false)} style={{flex:1,background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",color:C.text,fontSize:15,fontWeight:600,cursor:"pointer"}}>Отмена</button>}
-            <GreenBtn onClick={save} style={{flex:2}}>Сохранить</GreenBtn>
           </div>
-        </>
-      )}
+        </div>
+
+        {/* Telegram */}
+        {TG_USER?.username&&(
+          <div style={{background:"rgba(255,255,255,0.03)",border:`1px solid ${C.border}`,borderRadius:12,padding:"13px 16px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div style={{fontSize:13,color:C.muted}}>Telegram</div>
+            <div style={{fontSize:14,color:C.sub}}>@{TG_USER.username}</div>
+          </div>
+        )}
+
+        {/* Кнопка редактировать */}
+        <button onClick={()=>setEditing(true)}
+          style={{width:"100%",background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",color:C.text,fontSize:15,fontWeight:500,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          <I.Edit size={15} style={{color:C.sub}}/> Редактировать профиль
+        </button>
+      </>}
+
+      {/* ══ EDIT MODE ══ */}
+      {editing&&<>
+        {[
+          {k:"name",  l:"Имя",    pl:"Введите имя",type:"text"},
+          {k:"age",   l:"Возраст",pl:"—",          type:"number",s:"лет"},
+          {k:"weight",l:"Вес",    pl:"—",          type:"number",s:"кг"},
+        ].map(f=>(
+          <div key={f.k} style={{marginBottom:14}}>
+            <div style={{fontSize:12,color:C.sub,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:7}}>{f.l}</div>
+            <div style={{position:"relative"}}>
+              <input value={profile[f.k]||""} type={f.type}
+                onChange={e=>setProfile(p=>({...p,[f.k]:e.target.value}))} placeholder={f.pl}
+                style={{width:"100%",background:"rgba(255,255,255,0.05)",border:`1px solid ${C.border}`,borderRadius:12,color:"#fff",fontSize:16,padding:`14px ${f.s?"44px":16}px 14px 16px`,outline:"none",boxSizing:"border-box"}}/>
+              {f.s&&<span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:C.muted,fontSize:14,pointerEvents:"none"}}>{f.s}</span>}
+            </div>
+          </div>
+        ))}
+        <div style={{display:"flex",gap:10,marginTop:8}}>
+          {has&&<button onClick={()=>setEditing(false)} style={{flex:1,background:"rgba(255,255,255,0.05)",border:`1px solid ${C.border}`,borderRadius:12,padding:"15px",color:C.text,fontSize:15,fontWeight:600,cursor:"pointer"}}>Отмена</button>}
+          <GreenBtn onClick={save} style={{flex:2,fontSize:15}}>Сохранить</GreenBtn>
+        </div>
+      </>}
     </div>
   );
 }
