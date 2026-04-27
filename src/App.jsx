@@ -582,11 +582,17 @@ function ProfilePage({navigate}) {
   const [editing,setEditing] = useState(false);
   const [has,setHas] = useState(false);
   const [loading,setLoad] = useState(true);
+  const userLevel = localStorage.getItem("bw_user_level")||"";
+  const levelLabel = {beginner:"Новичок",intermediate:"Опытный",pro:"Профи"}[userLevel]||"";
 
   useEffect(()=>{(async()=>{
     const p=await db.getP();
     if(p&&(p.name||p.age||p.weight)){setProfile(p);setHas(true);}
-    else{const n=TG_USER?`${TG_USER.first_name||""} ${TG_USER.last_name||""}`.trim():"";setProfile(pr=>({...pr,name:n}));setEditing(true);}
+    else{
+      const n=TG_USER?`${TG_USER.first_name||""} ${TG_USER.last_name||""}`.trim():"";
+      setProfile(pr=>({...pr,name:n}));
+      setEditing(true);
+    }
     setLoad(false);
   })();},[]);
 
@@ -594,53 +600,85 @@ function ProfilePage({navigate}) {
   const initials=(profile.name||"?").split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
   if(loading) return <Loader/>;
 
-  return <Page>
-    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:24}}>
-      <IconBtn onClick={()=>navigate("home")}><I.Back size={18}/></IconBtn>
-      <div style={{fontSize:20,fontWeight:500,flex:1}}>Профиль</div>
-      {has&&!editing&&<IconBtn onClick={()=>setEditing(true)}><I.Edit size={16}/></IconBtn>}
-    </div>
+  return (
+    <div style={{minHeight:"100vh",background:C.bg,color:C.text,boxSizing:"border-box",paddingTop:SAFE_TOP_CSS,paddingLeft:16,paddingRight:16,paddingBottom:32}}>
 
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:24}}>
-      <div style={{width:80,height:80,borderRadius:"50%",background:"linear-gradient(135deg,#4ade80,#22d3ee)",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:10,overflow:"hidden",boxShadow:"0 0 28px rgba(74,222,128,0.25)"}}>
-        {TG_USER?.photo_url?<img src={TG_USER.photo_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                            :<div style={{fontSize:26,fontWeight:600,color:"#000"}}>{initials}</div>}
+      {/* Header с кнопками — фиксированная высота строки */}
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:28,height:44}}>
+        <IconBtn onClick={()=>navigate("home")} style={{flexShrink:0}}><I.Back size={18}/></IconBtn>
+        <div style={{fontSize:20,fontWeight:600,flex:1}}>Профиль</div>
+        {has&&!editing&&<IconBtn onClick={()=>setEditing(true)} style={{flexShrink:0}}><I.Edit size={16}/></IconBtn>}
       </div>
-      {TG_USER&&<div style={{fontSize:15,fontWeight:500}}>{`${TG_USER.first_name||""} ${TG_USER.last_name||""}`.trim()}</div>}
-      {TG_USER?.username&&<div style={{fontSize:13,color:C.sub,marginTop:2}}>@{TG_USER.username}</div>}
-    </div>
 
-    <div style={{background:tg?"rgba(74,222,128,0.07)":"rgba(255,255,255,0.03)",border:`1px solid ${tg?"rgba(74,222,128,0.2)":C.border}`,borderRadius:12,padding:"10px 14px",marginBottom:20,display:"flex",alignItems:"center",gap:8}}>
-      <div style={{width:7,height:7,borderRadius:"50%",background:tg?C.green:C.muted,flexShrink:0}}/>
-      <div style={{fontSize:12,color:tg?C.green:C.sub}}>{tg?"Данные синхронизируются через Telegram":"Данные хранятся локально"}</div>
-    </div>
-
-    {has&&!editing&&<div style={{display:"flex",flexDirection:"column",gap:8}}>
-      {[{l:"Имя",v:profile.name||"—"},{l:"Возраст",v:profile.age?`${profile.age} лет`:"—"},{l:"Вес",v:profile.weight?`${profile.weight} кг`:"—"}].map((f,i)=>(
-        <div key={i} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{fontSize:11,color:C.sub,textTransform:"uppercase",letterSpacing:"0.07em"}}>{f.l}</div>
-          <div style={{fontSize:16,fontWeight:500}}>{f.v}</div>
+      {/* Аватар слева + инфо справа */}
+      <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:28,padding:"18px 16px",background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:18}}>
+        {/* Фото */}
+        <div style={{width:72,height:72,borderRadius:"50%",background:"linear-gradient(135deg,#4ade80,#22d3ee)",flexShrink:0,overflow:"hidden",boxShadow:"0 0 20px rgba(74,222,128,0.2)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          {TG_USER?.photo_url
+            ?<img src={TG_USER.photo_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+            :<div style={{fontSize:24,fontWeight:700,color:"#000"}}>{initials}</div>
+          }
         </div>
-      ))}
-    </div>}
-
-    {editing&&<>
-      {[{k:"name",l:"Имя",pl:"Введите имя",type:"text"},{k:"age",l:"Возраст",pl:"—",type:"number",s:"лет"},{k:"weight",l:"Вес",pl:"—",type:"number",s:"кг"}].map(f=>(
-        <div key={f.k} style={{marginBottom:14}}>
-          <div style={{fontSize:11,color:C.sub,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:6}}>{f.l}</div>
-          <div style={{position:"relative"}}>
-            <input value={profile[f.k]||""} type={f.type} onChange={e=>setProfile(p=>({...p,[f.k]:e.target.value}))} placeholder={f.pl}
-              style={{width:"100%",background:"rgba(255,255,255,0.05)",border:`1px solid ${C.border}`,borderRadius:12,color:"#fff",fontSize:15,padding:`12px ${f.s?"36px":14}px 12px 14px`,outline:"none",boxSizing:"border-box"}}/>
-            {f.s&&<span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",color:C.muted,fontSize:13}}>{f.s}</span>}
+        {/* Инфо */}
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:18,fontWeight:600,color:"#fff",marginBottom:4,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
+            {profile.name || TG_USER?.first_name || "—"}
           </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+            {profile.age&&<span style={{fontSize:13,color:C.sub}}>{profile.age} лет</span>}
+            {profile.weight&&<span style={{fontSize:13,color:C.sub}}>· {profile.weight} кг</span>}
+            {levelLabel&&<span style={{fontSize:12,fontWeight:600,color:LVC[userLevel]||C.green,background:`${LVC[userLevel]||C.green}15`,borderRadius:6,padding:"2px 8px"}}>{levelLabel}</span>}
+          </div>
+          {TG_USER?.username&&<div style={{fontSize:12,color:C.muted,marginTop:4}}>@{TG_USER.username}</div>}
         </div>
-      ))}
-      <div style={{display:"flex",gap:8,marginTop:8}}>
-        {has&&<button onClick={()=>setEditing(false)} style={{flex:1,background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",color:C.text,fontSize:14,fontWeight:600,cursor:"pointer"}}>Отмена</button>}
-        <GreenBtn onClick={save} style={{flex:2}}>Сохранить</GreenBtn>
       </div>
-    </>}
-  </Page>;
+
+      {/* View mode */}
+      {has&&!editing&&(
+        <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
+          {[
+            {l:"Имя",    v:profile.name||"—"},
+            {l:"Возраст",v:profile.age?`${profile.age} лет`:"—"},
+            {l:"Вес",    v:profile.weight?`${profile.weight} кг`:"—"},
+            {l:"Уровень",v:levelLabel||"Не выбран"},
+          ].map((f,i)=>(
+            <div key={i} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{fontSize:12,color:C.sub,textTransform:"uppercase",letterSpacing:"0.07em"}}>{f.l}</div>
+              <div style={{fontSize:16,fontWeight:500}}>{f.v}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Edit mode */}
+      {editing&&(
+        <>
+          {[
+            {k:"name",  l:"Имя",     pl:"Введите имя", type:"text"},
+            {k:"age",   l:"Возраст", pl:"—",            type:"number", s:"лет"},
+            {k:"weight",l:"Вес",     pl:"—",            type:"number", s:"кг"},
+          ].map(f=>(
+            <div key={f.k} style={{marginBottom:14}}>
+              <div style={{fontSize:12,color:C.sub,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:6}}>{f.l}</div>
+              <div style={{position:"relative"}}>
+                <input
+                  value={profile[f.k]||""} type={f.type}
+                  onChange={e=>setProfile(p=>({...p,[f.k]:e.target.value}))}
+                  placeholder={f.pl}
+                  style={{width:"100%",background:"rgba(255,255,255,0.05)",border:`1px solid ${C.border}`,borderRadius:12,color:"#fff",fontSize:15,padding:`13px ${f.s?"40px":16}px 13px 16px`,outline:"none",boxSizing:"border-box"}}
+                />
+                {f.s&&<span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",color:C.muted,fontSize:13,pointerEvents:"none"}}>{f.s}</span>}
+              </div>
+            </div>
+          ))}
+          <div style={{display:"flex",gap:10,marginTop:8}}>
+            {has&&<button onClick={()=>setEditing(false)} style={{flex:1,background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",color:C.text,fontSize:15,fontWeight:600,cursor:"pointer"}}>Отмена</button>}
+            <GreenBtn onClick={save} style={{flex:2}}>Сохранить</GreenBtn>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
@@ -771,11 +809,8 @@ function HomePage({navigate}) {
   return <Page>
     {/* Header */}
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:22}}>
-      <div>
-        <div style={{fontSize:11,letterSpacing:"0.13em",color:C.muted,textTransform:"uppercase",marginBottom:4}}>Велотренировки</div>
-        <div style={{fontSize:28,fontWeight:300,lineHeight:1.1}}>{firstName?`Привет,\u00A0${firstName}!`:"Тренировки"}</div>
-      </div>
-      <button onClick={()=>navigate("profile")} style={{width:42,height:42,borderRadius:"50%",background:tg?"rgba(74,222,128,0.1)":C.surface,border:`1px solid ${tg?"rgba(74,222,128,0.25)":C.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:tg?C.green:C.text}}>
+      <div style={{fontSize:28,fontWeight:300,lineHeight:1.1}}>{firstName?`Привет,\u00A0${firstName}!`:"Тренировки"}</div>
+      <button onClick={()=>navigate("profile")} style={{width:42,height:42,borderRadius:"50%",background:tg?"rgba(74,222,128,0.1)":C.surface,border:`1px solid ${tg?"rgba(74,222,128,0.25)":C.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:tg?C.green:C.text,flexShrink:0}}>
         <I.User size={18}/>
       </button>
     </div>
