@@ -402,11 +402,11 @@ function WCard({workout,onStart,onEdit,onDelete}) {
 
   return (
     <div style={{animation:"slideUp 0.2s ease both",marginBottom:10}}>
-      <div {...ph} onClick={onStart} style={{...ps,background:CARD,borderRadius:16,padding:"14px",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
+      <div style={{background:CARD,borderRadius:16,padding:"14px",display:"flex",alignItems:"center",gap:12}}>
         <div style={{width:50,height:50,borderRadius:14,background:prog?.iconBg||"#1a1a2a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>
           {prog?.icon||"🏃"}
         </div>
-        <div style={{flex:1,minWidth:0}}>
+        <div {...ph} onClick={onStart} style={{...ps,flex:1,minWidth:0,cursor:"pointer"}}>
           <div style={{fontSize:15,fontWeight:600,marginBottom:4,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{workout.name}</div>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
             <span style={{display:"flex",alignItems:"center",gap:4,color:SUB,fontSize:12}}><I.Clock size={11}/>{fmtD(total)}</span>
@@ -414,7 +414,12 @@ function WCard({workout,onStart,onEdit,onDelete}) {
           </div>
           <IvBar intervals={ivs} h={3}/>
         </div>
-        <button ref={btnRef} onClick={openMenu} style={{background:"none",border:"none",color:MUTED,cursor:"pointer",padding:"4px 6px",fontSize:18,letterSpacing:2,flexShrink:0}}>···</button>
+        {/* Play button — как у программ */}
+        <button onClick={onStart}
+          style={{width:40,height:40,borderRadius:"50%",background:BLUE,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#fff",paddingLeft:2}}>
+          <I.Play size={16}/>
+        </button>
+        <button ref={btnRef} onClick={openMenu} style={{background:"none",border:"none",color:MUTED,cursor:"pointer",padding:"4px 4px",fontSize:18,letterSpacing:2,flexShrink:0}}>···</button>
       </div>
 
       {menu&&createPortal(<>
@@ -499,74 +504,50 @@ function HomeView({navigate}) {
 
   return (
     <Page>
-      {/* Header */}
       <div style={{padding:"16px 16px 0"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-          <div style={{fontSize:22,fontWeight:700}}>Тренировки</div>
-        </div>
-
-        {/* Create button */}
+        {/* Create button — первая строка */}
         <button onClick={()=>navigate("create")} {...ph}
-          style={{...ps,width:"100%",background:BLUE,border:"none",borderRadius:14,padding:"14px",marginBottom:18,display:"flex",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",fontSize:15,fontWeight:700,color:"#fff",boxShadow:`0 4px 20px ${BLUE}44`}}>
+          style={{...ps,width:"100%",background:BLUE,border:"none",borderRadius:14,padding:"14px",marginBottom:20,display:"flex",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",fontSize:15,fontWeight:700,color:"#fff",boxShadow:`0 4px 20px ${BLUE}44`}}>
           <I.Plus size={18} style={{color:"#fff"}}/>Создать тренировку
         </button>
-
-        {/* Tabs */}
-        <div style={{display:"flex",gap:8,marginBottom:16}}>
-          {[["programs","Программы"],["my","Мои тренировки"]].map(([id,l])=>(
-            <button key={id} onClick={()=>setTab(id)}
-              style={{padding:"7px 16px",borderRadius:20,border:"none",cursor:"pointer",fontSize:13,fontWeight:600,background:tab===id?TXT:CARD2,color:tab===id?BG:SUB,transition:"all 0.18s"}}>
-              {l}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div style={{padding:"0 16px"}}>
-        {/* Programs tab */}
-        {tab==="programs"&&<>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-            <div style={{fontSize:18,fontWeight:700}}>Программы</div>
-            <button onClick={()=>setLvlSheet(true)}
-              style={{background:"none",border:"none",color:BLUE,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
-              {userLevel?LEVEL_LABEL[userLevel]:"Выбрать уровень"} <span style={{fontSize:12}}>▾</span>
-            </button>
+        {/* Мои тренировки — только если есть */}
+        {myWorkouts.length>0&&(
+          <div style={{marginBottom:24}}>
+            <div style={{fontSize:18,fontWeight:700,marginBottom:12}}>Мои программы</div>
+            {myWorkouts.map(w=><WCard key={w.id} workout={w} onStart={()=>navigate("workout",w.id)} onEdit={()=>navigate("edit",w.id)} onDelete={async()=>{await db.delW(w.id);load();}}/>)}
           </div>
-          {filtProgs.map(p=><ProgCard key={p.id} prog={p} onStart={startProg} added={addedIds.has(p.id)}/>)}
-        </>}
+        )}
 
-        {/* My workouts tab */}
-        {tab==="my"&&<>
-          {myWorkouts.length>0
-            ?<>{myWorkouts.map(w=><WCard key={w.id} workout={w} onStart={()=>navigate("workout",w.id)} onEdit={()=>navigate("edit",w.id)} onDelete={async()=>{await db.delW(w.id);load();}}/>)}</>
-            :<div style={{textAlign:"center",padding:"48px 0",color:MUTED}}>
-              <div style={{fontSize:40,marginBottom:10}}>🏃</div>
-              <div style={{fontSize:16,fontWeight:600,marginBottom:6}}>Нет тренировок</div>
-              <div style={{fontSize:13}}>Создайте свою или запустите программу</div>
-            </div>
-          }
-        </>}
+        {/* Программы */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+          <div style={{fontSize:18,fontWeight:700}}>Программы</div>
+          <button onClick={()=>setLvlSheet(true)}
+            style={{background:CARD2,border:`1px solid ${LINE}`,borderRadius:20,padding:"5px 12px",color:userLevel?BLUE:SUB,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+            {userLevel?LEVEL_LABEL[userLevel]:"Уровень"} <span style={{fontSize:11}}>▾</span>
+          </button>
+        </div>
+        {filtProgs.map(p=><ProgCard key={p.id} prog={p} onStart={startProg} added={addedIds.has(p.id)}/>)}
       </div>
 
-      {/* Level sheet */}
+      {/* Level sheet через портал — zIndex 9999 чтобы точно поверх */}
       {lvlSheet&&createPortal(
-        <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"flex-end"}} onClick={()=>setLvlSheet(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:CARD,borderRadius:"20px 20px 0 0",padding:"20px 16px 32px"}}>
+        <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"flex-end"}} onClick={()=>setLvlSheet(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:CARD,borderRadius:"20px 20px 0 0",padding:"20px 16px",paddingBottom:"max(32px,env(safe-area-inset-bottom,32px))"}}>
             <div style={{width:36,height:4,background:MUTED,borderRadius:2,margin:"0 auto 20px"}}/>
             <div style={{fontSize:17,fontWeight:700,marginBottom:16}}>Ваш уровень</div>
             {[{l:"beginner",label:"Новичок",emoji:"🌱",desc:"Первые тренировки, безопасная нагрузка"},
               {l:"intermediate",label:"Опытный",emoji:"⚡",desc:"HIIT, интервалы, смешанная нагрузка"},
-              {l:"pro",label:"Профи",emoji:"🏆",desc:"Максимальная интенсивность, VO2max"}].map(lv=>{
-              const [lph,lps]=usePress(0.97);
-              return (
-                <button key={lv.l} {...lph} onClick={()=>chooseLevel(lv.l)}
-                  style={{...lps,width:"100%",background:userLevel===lv.l?BLUE+"18":CARD2,border:`1px solid ${userLevel===lv.l?BLUE+"44":LINE}`,borderRadius:14,padding:"14px",display:"flex",alignItems:"center",gap:12,marginBottom:8,cursor:"pointer",textAlign:"left"}}>
-                  <span style={{fontSize:22}}>{lv.emoji}</span>
-                  <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:userLevel===lv.l?BLUE:TXT}}>{lv.label}</div><div style={{fontSize:12,color:SUB}}>{lv.desc}</div></div>
-                  {userLevel===lv.l&&<I.Check size={18} style={{color:BLUE}}/>}
-                </button>
-              );
-            })}
+              {l:"pro",label:"Профи",emoji:"🏆",desc:"Максимальная интенсивность, VO2max"}].map(lv=>(
+              <button key={lv.l} onClick={()=>chooseLevel(lv.l)}
+                style={{width:"100%",background:userLevel===lv.l?BLUE+"18":CARD2,border:`1px solid ${userLevel===lv.l?BLUE+"44":LINE}`,borderRadius:14,padding:"14px",display:"flex",alignItems:"center",gap:12,marginBottom:8,cursor:"pointer",textAlign:"left"}}>
+                <span style={{fontSize:22}}>{lv.emoji}</span>
+                <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:userLevel===lv.l?BLUE:TXT}}>{lv.label}</div><div style={{fontSize:12,color:SUB}}>{lv.desc}</div></div>
+                {userLevel===lv.l&&<I.Check size={18} style={{color:BLUE}}/>}
+              </button>
+            ))}
             {userLevel&&<button onClick={()=>chooseLevel("")} style={{width:"100%",background:"none",border:"none",color:SUB,fontSize:13,cursor:"pointer",marginTop:8,padding:"8px"}}>Сбросить уровень</button>}
           </div>
         </div>,
@@ -608,7 +589,6 @@ function StatsView({navigate}) {
   return (
     <Page>
       <div style={{padding:"16px 16px 0",marginBottom:4}}>
-        <div style={{fontSize:22,fontWeight:700}}>Статистика тренировок</div>
       </div>
 
       <div style={{padding:"0 16px"}}>
@@ -691,7 +671,33 @@ function StatsView({navigate}) {
   );
 }
 
-// ─── PROFILE VIEW ─────────────────────────────────────────────────────────────
+// ─── WEIGHT PICKER ────────────────────────────────────────────────────────────
+function WeightPicker({current, onSave, onClose}) {
+  const parsed = parseFloat(String(current).replace(",",".")) || 70;
+  const [kg, setKg]   = useState(Math.floor(parsed));
+  const [dec, setDec] = useState(Math.round((parsed % 1) * 10));
+
+  return createPortal(
+    <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"flex-end"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:CARD,borderRadius:"20px 20px 0 0",padding:"20px 20px",paddingBottom:"max(32px,env(safe-area-inset-bottom,32px))"}}>
+        <div style={{width:36,height:4,background:MUTED,borderRadius:2,margin:"0 auto 20px"}}/>
+        <div style={{fontSize:16,fontWeight:600,marginBottom:4,textAlign:"center"}}>Текущий вес</div>
+        <div style={{fontSize:13,color:SUB,textAlign:"center",marginBottom:20}}>{kg},{dec} кг</div>
+        <div style={{display:"flex",alignItems:"center",gap:4}}>
+          <WheelCol value={kg}  max={200} onChange={setKg}/>
+          <div style={{fontSize:28,fontWeight:300,color:MUTED,flexShrink:0}}>,</div>
+          <WheelCol value={dec} max={9}   onChange={setDec}/>
+          <div style={{fontSize:16,color:SUB,flexShrink:0,paddingBottom:6}}>кг</div>
+        </div>
+        <div style={{display:"flex",gap:10,marginTop:20}}>
+          <button onClick={onClose} style={{flex:1,background:CARD2,border:`1px solid ${LINE}`,borderRadius:12,padding:"13px",color:TXT,fontSize:14,fontWeight:600,cursor:"pointer"}}>Отмена</button>
+          <Btn onClick={()=>{ onSave(`${kg}.${dec}`); onClose(); }} style={{flex:2}}>Сохранить</Btn>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
 function ProfileView() {
   const [profile,setProfile]=useState({name:"",age:"",weight:"",targetWeight:""});
   const [editing,setEditing]=useState(false);
@@ -713,15 +719,17 @@ function ProfileView() {
 
   const save=async()=>{ await db.saveP(profile); setHas(true); setEditing(false); };
 
-  const updateWeight=async()=>{
-    const w=parseFloat(newWeight);
-    if(isNaN(w)||w<=0)return;
-    const entry={date:new Date().toISOString(),weight:w};
-    const newWH=[...weightHistory,entry];
+  const [weightPickerOpen, setWPO] = useState(false);
+
+  const updateWeight = async (val) => {
+    const w = parseFloat(val);
+    if (isNaN(w)||w<=0) return;
+    const entry = {date:new Date().toISOString(), weight:w};
+    const newWH = [...weightHistory, entry];
     await db.saveWT(newWH);
-    await db.saveP({...profile,weight:String(w)});
+    await db.saveP({...profile, weight:String(w)});
     setWH(newWH);
-    setProfile(p=>({...p,weight:String(w)}));
+    setProfile(p=>({...p, weight:String(w)}));
   };
 
   const displayName=profile.name||TG_USER?.first_name||"";
@@ -803,20 +811,16 @@ function ProfileView() {
           {has&&!editing&&(
             <div style={{borderTop:`1px solid ${LINE}`,paddingTop:14}}>
               <div style={{fontSize:13,color:SUB,marginBottom:8}}>Текущий вес</div>
-              <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:24,fontWeight:700}}>{curWeight?`${curWeight} кг`:"—"}</div>
-                </div>
-                <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                  <input value={newWeight} onChange={e=>setNW(e.target.value)} type="number" step="0.1" placeholder={String(curWeight||"")}
-                    style={{width:70,background:CARD2,border:`1px solid ${LINE}`,borderRadius:10,color:TXT,fontSize:15,padding:"9px 10px",outline:"none",textAlign:"center"}}/>
-                  <button onClick={updateWeight} style={{background:BLUE,border:"none",borderRadius:10,padding:"9px 12px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
-                    <I.Refresh size={14}/>Обновить
-                  </button>
-                </div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div style={{fontSize:24,fontWeight:700}}>{curWeight?`${curWeight} кг`:"—"}</div>
+                <button onClick={()=>setWPO(true)}
+                  style={{background:BLUE,border:"none",borderRadius:10,padding:"9px 14px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+                  <I.Refresh size={14}/>Обновить
+                </button>
               </div>
             </div>
           )}
+          {weightPickerOpen&&<WeightPicker current={curWeight||70} onSave={updateWeight} onClose={()=>setWPO(false)}/>}
         </div>
 
         {/* Weight chart */}
@@ -875,11 +879,6 @@ function ProfileView() {
           </div>
         )}
 
-        {/* Sync */}
-        <div style={{background:CARD,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:8,height:8,borderRadius:"50%",background:tg?"#4ade80":MUTED,flexShrink:0}}/>
-          <div style={{fontSize:13,color:tg?"#4ade80":SUB}}>{tg?"Данные синхронизируются через Telegram":"Данные хранятся локально"}</div>
-        </div>
       </div>
     </Page>
   );
@@ -1182,11 +1181,17 @@ export default function App() {
   };
 
   useEffect(()=>{
+    // Запрет зума
+    const meta=document.createElement("meta");
+    meta.name="viewport";
+    meta.content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
+    document.head.appendChild(meta);
+
     // Global styles
     const s=document.createElement("style");
     s.textContent=`
       *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-      body{margin:0;padding:0;background:#0d0d0f;color:#f4f4f5;font-family:-apple-system,'SF Pro Text','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none;}
+      body{margin:0;padding:0;background:#0d0d0f;color:#f4f4f5;font-family:-apple-system,'SF Pro Text','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:pan-x pan-y;}
       ::-webkit-scrollbar{display:none;}
       input,button{font-family:inherit;}
       input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
@@ -1195,7 +1200,7 @@ export default function App() {
       @keyframes scaleIn{from{transform:scale(0.82);opacity:0}to{transform:scale(1);opacity:1}}
     `;
     document.head.appendChild(s);
-    return()=>document.head.removeChild(s);
+    return()=>{ document.head.removeChild(s); document.head.removeChild(meta); };
   },[]);
 
   if(page==="create")  return <CreatePage  navigate={navigate} editId={null}/>;
