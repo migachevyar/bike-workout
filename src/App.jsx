@@ -12,7 +12,7 @@ if (tg) {
 const TG_USER = tg?.initDataUnsafe?.user || null;
 
 // CSS переменная которую Telegram выставляет сам — высота его шапки
-const ST  = "calc(var(--tg-content-safe-area-inset-top, 60px) + env(safe-area-inset-top, 0px))";
+const ST  = "calc(var(--tg-content-safe-area-inset-top, 72px) + env(safe-area-inset-top, 0px))";
 const SB  = "calc(env(safe-area-inset-bottom, 0px) + 60px)";
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
@@ -50,22 +50,22 @@ const loadTimer  = ()=>{ try{return JSON.parse(localStorage.getItem(TK))}catch{r
 // ─── PROGRAMS ─────────────────────────────────────────────────────────────────
 // Иконки — тематические, не ядовитые, спортивные
 const PROGS = [
-  { id:"b1", icon:"🔥", iconBg:"#3a2a1a", name:"Сжигание жира",    dur:25, kcal:"250–300", level:"beginner",     ll:"Новичок",
+  { id:"b1", iconType:"flame",  iconBg:"linear-gradient(135deg,#f97316,#c2410c)", name:"Сжигание жира",    dur:25, kcal:"250–300", level:"beginner",     ll:"Новичок",
     desc:"Мягкий вход. Пульс 60–70% — жиросжигающая зона.",
     iv:[{id:"b1a",t:"slow",d:300},{id:"b1b",t:"medium",d:120},{id:"b1c",t:"slow",d:180},{id:"b1d",t:"medium",d:120},{id:"b1e",t:"slow",d:180},{id:"b1f",t:"medium",d:120},{id:"b1g",t:"slow",d:480}] },
-  { id:"i1", icon:"⚡", iconBg:"#1a2a3a", name:"HIIT Sprint",        dur:20, kcal:"300–400", level:"intermediate", ll:"Опытный",
+  { id:"i1", iconType:"zap",    iconBg:"linear-gradient(135deg,#3b82f6,#1d4ed8)", name:"HIIT Sprint",        dur:20, kcal:"300–400", level:"intermediate", ll:"Опытный",
     desc:"Чередование спринтов и восстановления. Разгоняет метаболизм на 24–48 ч.",
     iv:[{id:"i1w",t:"slow",d:300},...Array.from({length:7},(_,i)=>[{id:`i1f${i}`,t:"fast",d:30},{id:`i1r${i}`,t:"slow",d:90}]).flat(),{id:"i1c",t:"slow",d:300}] },
-  { id:"p2", icon:"🏋️", iconBg:"#1a2a1a", name:"Выносливость",       dur:30, kcal:"350–450", level:"pro",          ll:"Профи",
+  { id:"p2", iconType:"heart",  iconBg:"linear-gradient(135deg,#a855f7,#7c3aed)", name:"Выносливость",       dur:30, kcal:"350–450", level:"pro",          ll:"Профи",
     desc:"VO2max — интервалы на уровне максимального потребления кислорода.",
     iv:[{id:"p2a",t:"slow",d:600},{id:"p2b",t:"medium",d:180},{id:"p2c",t:"fast",d:180},{id:"p2d",t:"medium",d:180},{id:"p2e",t:"fast",d:180},{id:"p2f",t:"medium",d:180},{id:"p2g",t:"fast",d:180},{id:"p2h",t:"medium",d:180},{id:"p2i",t:"fast",d:180},{id:"p2j",t:"medium",d:180},{id:"p2k",t:"slow",d:600}] },
-  { id:"p1", icon:"💪", iconBg:"#2a1a2a", name:"Табата",             dur:15, kcal:"200–250", level:"intermediate", ll:"Опытный",
+  { id:"p1", iconType:"timer",  iconBg:"linear-gradient(135deg,#ef4444,#b91c1c)", name:"Табата",             dur:15, kcal:"200–250", level:"intermediate", ll:"Опытный",
     desc:"20 сек максимально, 10 сек отдыха. Научно доказан как лучший для жиросжигания.",
     iv:[{id:"p1w",t:"slow",d:180},...Array.from({length:8},(_,i)=>[{id:`p1f${i}`,t:"fast",d:20},{id:`p1r${i}`,t:"slow",d:10}]).flat(),{id:"p1m",t:"slow",d:120},...Array.from({length:8},(_,i)=>[{id:`p1g${i}`,t:"fast",d:20},{id:`p1s${i}`,t:"slow",d:10}]).flat(),{id:"p1c",t:"slow",d:180}] },
-  { id:"b2", icon:"🚴", iconBg:"#1a2a38", name:"Кардио старт",      dur:20, kcal:"180–220", level:"beginner",     ll:"Новичок",
+  { id:"b2", iconType:"bike",   iconBg:"linear-gradient(135deg,#06b6d4,#0e7490)", name:"Кардио старт",      dur:20, kcal:"180–220", level:"beginner",     ll:"Новичок",
     desc:"Равномерная нагрузка без скачков пульса. Идеально для начинающих.",
     iv:[{id:"b2a",t:"slow",d:240},{id:"b2b",t:"medium",d:240},{id:"b2c",t:"slow",d:120},{id:"b2d",t:"medium",d:240},{id:"b2e",t:"slow",d:120},{id:"b2f",t:"medium",d:240}] },
-  { id:"i2", icon:"📈", iconBg:"#1a2a1f", name:"Энергия",            dur:25, kcal:"400–500", level:"pro",          ll:"Профи",
+  { id:"i2", iconType:"trend",  iconBg:"linear-gradient(135deg,#22c55e,#15803d)", name:"Энергия",            dur:25, kcal:"400–500", level:"pro",          ll:"Профи",
     desc:"Пирамида нагрузок. Нарастание и спад — для максимальной аэробной мощности.",
     iv:[{id:"i2a",t:"slow",d:300},{id:"i2b",t:"medium",d:120},{id:"i2c",t:"fast",d:60},{id:"i2d",t:"medium",d:120},{id:"i2e",t:"fast",d:90},{id:"i2f",t:"medium",d:120},{id:"i2g",t:"fast",d:120},{id:"i2h",t:"medium",d:120},{id:"i2i",t:"fast",d:90},{id:"i2j",t:"medium",d:120},{id:"i2k",t:"fast",d:60},{id:"i2l",t:"medium",d:120},{id:"i2m",t:"slow",d:300}] },
 ];
@@ -97,6 +97,16 @@ const MUTED = "#3f3f46";
 const BLUE  = "#3b82f6";
 const ACCENT= "#3b82f6";
 
+// ─── HAPTIC ───────────────────────────────────────────────────────────────────
+const haptic=(type='light')=>{
+  if(!tg?.HapticFeedback)return;
+  if(type==='success')tg.HapticFeedback.notificationOccurred('success');
+  else if(type==='warning')tg.HapticFeedback.notificationOccurred('warning');
+  else if(type==='heavy')tg.HapticFeedback.impactOccurred('heavy');
+  else if(type==='medium')tg.HapticFeedback.impactOccurred('medium');
+  else tg.HapticFeedback.impactOccurred('light');
+};
+
 // ─── HOOKS ────────────────────────────────────────────────────────────────────
 function usePress(scale=0.96) {
   const [p,setP]=useState(false);
@@ -104,6 +114,64 @@ function usePress(scale=0.96) {
     {onPointerDown:()=>setP(true),onPointerUp:()=>setP(false),onPointerLeave:()=>setP(false)},
     {transform:p?`scale(${scale})`:"scale(1)",transition:"transform 0.1s ease"},
   ];
+}
+
+function useCountUp(target,duration=1100,delay=0){
+  const [val,setVal]=useState(0);
+  useEffect(()=>{
+    let raf,timeout;
+    const start=()=>{
+      const t0=Date.now();
+      const tick=()=>{
+        const p=Math.min((Date.now()-t0)/duration,1);
+        const e=1-Math.pow(1-p,3);
+        setVal(Math.round(e*target));
+        if(p<1)raf=requestAnimationFrame(tick);
+      };
+      raf=requestAnimationFrame(tick);
+    };
+    timeout=setTimeout(start,delay);
+    return()=>{cancelAnimationFrame(raf);clearTimeout(timeout);};
+  },[target,delay]);
+  return val;
+}
+
+// ─── CONFETTI ─────────────────────────────────────────────────────────────────
+function Confetti({active}){
+  const ref=useRef(null);
+  useEffect(()=>{
+    if(!active||!ref.current)return;
+    const cv=ref.current, ctx=cv.getContext('2d');
+    cv.width=window.innerWidth; cv.height=window.innerHeight;
+    const COLORS=['#3b82f6','#f97316','#a855f7','#22c55e','#facc15','#ef4444','#06b6d4','#f472b6'];
+    const ps=Array.from({length:140},()=>({
+      x:Math.random()*cv.width, y:-20-Math.random()*120,
+      vx:(Math.random()-0.5)*5, vy:1.5+Math.random()*4,
+      color:COLORS[Math.floor(Math.random()*COLORS.length)],
+      w:5+Math.random()*7, h:3+Math.random()*5,
+      rot:Math.random()*360, rv:(Math.random()-0.5)*9,
+      alpha:1,
+    }));
+    let raf; const t0=Date.now();
+    const draw=()=>{
+      const elapsed=Date.now()-t0;
+      ctx.clearRect(0,0,cv.width,cv.height);
+      ps.forEach(p=>{
+        p.x+=p.vx; p.y+=p.vy; p.vy+=0.12; p.rot+=p.rv;
+        p.alpha=elapsed<1800?1:Math.max(0,1-(elapsed-1800)/900);
+        ctx.save(); ctx.globalAlpha=p.alpha;
+        ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+        ctx.fillStyle=p.color;
+        ctx.beginPath(); ctx.roundRect(-p.w/2,-p.h/2,p.w,p.h,2); ctx.fill();
+        ctx.restore();
+      });
+      if(elapsed<2800)raf=requestAnimationFrame(draw);
+    };
+    raf=requestAnimationFrame(draw);
+    return()=>cancelAnimationFrame(raf);
+  },[active]);
+  if(!active)return null;
+  return <canvas ref={ref} style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:9999}}/>;
 }
 
 // ─── ICONS ────────────────────────────────────────────────────────────────────
@@ -129,7 +197,31 @@ const I={
   Weight: p=><Svg {...p}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></Svg>,
   Refresh:p=><Svg {...p}><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></Svg>,
   Camera: p=><Svg {...p}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></Svg>,
+  Flame:  p=><Svg {...p}><path d="M12 2s-5 6.5-5 10.5a5 5 0 0 0 10 0C17 8.5 12 2 12 2zm0 13.5a2 2 0 0 1-2-2c0-1.5 2-4 2-4s2 2.5 2 4a2 2 0 0 1-2 2z" fill="currentColor" stroke="none"/></Svg>,
+  Bike:   p=><Svg {...p}><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M9 17l3-8 3 3h-3l-3 5"/><path d="M18 17l-3-8H9"/><circle cx="15" cy="6" r="1" fill="currentColor"/></Svg>,
+  Heart:  p=><Svg {...p}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="currentColor" stroke="none"/></Svg>,
+  Timer:  p=><Svg {...p}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/><path d="M10 2h4"/></Svg>,
+  Trend:  p=><Svg {...p}><polyline points="22,7 13.5,15.5 8.5,10.5 2,17"/><polyline points="16,7 22,7 22,13"/></Svg>,
 };
+
+// ─── PROGRAM ICON ─────────────────────────────────────────────────────────────
+const PROG_ICON_MAP = {
+  b1:{type:"flame",bg:"linear-gradient(135deg,#f97316,#c2410c)"},
+  i1:{type:"zap",  bg:"linear-gradient(135deg,#3b82f6,#1d4ed8)"},
+  p2:{type:"heart",bg:"linear-gradient(135deg,#a855f7,#7c3aed)"},
+  p1:{type:"timer",bg:"linear-gradient(135deg,#ef4444,#b91c1c)"},
+  b2:{type:"bike", bg:"linear-gradient(135deg,#06b6d4,#0e7490)"},
+  i2:{type:"trend",bg:"linear-gradient(135deg,#22c55e,#15803d)"},
+};
+function ProgSvgIcon({id,size=50}) {
+  const cfg=PROG_ICON_MAP[id]||{type:"zap",bg:"linear-gradient(135deg,#3b82f6,#1d4ed8)"};
+  const IconComp={flame:I.Flame,zap:I.Zap,heart:I.Heart,timer:I.Timer,bike:I.Bike,trend:I.Trend}[cfg.type]||I.Zap;
+  return (
+    <div style={{width:size,height:size,borderRadius:14,background:cfg.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+      <IconComp size={24} style={{color:"#fff"}} fill="#fff" stroke="#fff"/>
+    </div>
+  );
+}
 
 // ─── BASE COMPONENTS ──────────────────────────────────────────────────────────
 const Loader=()=>(
@@ -350,9 +442,7 @@ function ProgCard({prog,onStart,added}) {
       {/* Main row */}
       <div {...ph} onClick={()=>setOpen(v=>!v)} style={{...ps,display:"flex",alignItems:"center",gap:12,padding:"14px",cursor:"pointer"}}>
         {/* Icon */}
-        <div style={{width:50,height:50,borderRadius:14,background:prog.iconBg||"#1a2a3a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>
-          {prog.icon}
-        </div>
+        <ProgSvgIcon id={prog.id}/>
         {/* Info */}
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize:16,fontWeight:600,marginBottom:4,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{prog.name}</div>
@@ -391,22 +481,45 @@ function ProgCard({prog,onStart,added}) {
 function WCard({workout,onStart,onEdit,onDelete}) {
   const total=(workout.intervals||[]).reduce((s,i)=>s+(i.d||i.duration||0),0);
   const [ph,ps]=usePress(0.97);
-  const [menu,setMenu]=useState(false);
-  const [mPos,setMPos]=useState({top:0,right:0});
-  const btnRef=useRef(null);
+  const [open,setOpen]=useState(false), [tx,setTx]=useState(0);
+  const sx=useRef(null),sy=useRef(null),isH=useRef(false),drag=useRef(false);
   const isP=PROG_IDS.has(workout.id);
-  const prog=PROGS.find(p=>p.id===workout.id);
   const ivs=(workout.intervals||[]).map(iv=>({t:iv.t||iv.type,d:iv.d||iv.duration||1}));
+  const SLIDE=148;
 
-  const openMenu=e=>{ e.stopPropagation(); const r=btnRef.current.getBoundingClientRect(); setMPos({top:r.bottom+6,right:window.innerWidth-r.right}); setMenu(true); };
+  const onTS=e=>{ if(isP)return; sx.current=e.touches[0].clientX;sy.current=e.touches[0].clientY;isH.current=false;drag.current=false;};
+  const onTM=e=>{
+    if(isP||sx.current===null)return;
+    const dx=e.touches[0].clientX-sx.current,dy=e.touches[0].clientY-sy.current;
+    if(!drag.current){if(Math.abs(dx)<4&&Math.abs(dy)<4)return;isH.current=Math.abs(dx)>Math.abs(dy);drag.current=true;}
+    if(!isH.current)return; e.preventDefault(); e.stopPropagation();
+    setTx(Math.max(-SLIDE,Math.min(0,(open?-SLIDE:0)+dx)));
+  };
+  const onTE=()=>{ if(isP){sx.current=null;return;} if(!drag.current||!isH.current){sx.current=null;return;}drag.current=false;const o=tx<-SLIDE/2;setOpen(o);setTx(o?-SLIDE:0);sx.current=null;};
 
   return (
-    <div style={{animation:"slideUp 0.2s ease both",marginBottom:10}}>
-      <div style={{background:CARD,borderRadius:16,padding:"14px",display:"flex",alignItems:"center",gap:12}}>
-        <div style={{width:50,height:50,borderRadius:14,background:prog?.iconBg||"#1a1a2a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>
-          {prog?.icon||"🏃"}
+    <div style={{position:"relative",marginBottom:10,borderRadius:16,overflow:"hidden",animation:"slideUp 0.2s ease both"}}>
+      {/* Кнопки за карточкой — только для кастомных тренировок */}
+      {!isP&&(
+        <div style={{position:"absolute",right:0,top:0,bottom:0,width:SLIDE,display:"flex",borderRadius:"0 16px 16px 0",overflow:"hidden",zIndex:0}}>
+          <button onClick={()=>{setOpen(false);setTx(0);setTimeout(onEdit,150)}}
+            style={{flex:1,background:"#1e3a5f",border:"none",color:"#93c5fd",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3}}>
+            <I.Edit size={17}/><span style={{fontSize:9,fontWeight:700}}>ИЗМЕНИТЬ</span>
+          </button>
+          <button onClick={()=>{setOpen(false);setTx(0);setTimeout(onDelete,150)}}
+            style={{flex:1,background:"#450a0a",border:"none",color:"#fca5a5",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3}}>
+            <I.Trash size={17}/><span style={{fontSize:9,fontWeight:700}}>УДАЛИТЬ</span>
+          </button>
         </div>
-        <div {...ph} onClick={onStart} style={{...ps,flex:1,minWidth:0,cursor:"pointer"}}>
+      )}
+      {/* Карточка */}
+      <div onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={onTE}
+        style={{background:CARD,borderRadius:16,padding:"14px",display:"flex",alignItems:"center",gap:12,
+          transform:`translateX(${tx}px)`,
+          transition:(drag.current&&isH.current)?"none":"transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)",
+          position:"relative",zIndex:1,userSelect:"none",touchAction:(!isP&&open)?"none":"pan-y"}}>
+        <ProgSvgIcon id={workout.id}/>
+        <div {...ph} onClick={()=>{if(!open)onStart();}} style={{...ps,flex:1,minWidth:0,cursor:"pointer"}}>
           <div style={{fontSize:15,fontWeight:600,marginBottom:4,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{workout.name}</div>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
             <span style={{display:"flex",alignItems:"center",gap:4,color:SUB,fontSize:12}}><I.Clock size={11}/>{fmtD(total)}</span>
@@ -414,22 +527,11 @@ function WCard({workout,onStart,onEdit,onDelete}) {
           </div>
           <IvBar intervals={ivs} h={3}/>
         </div>
-        {/* Play button — как у программ */}
-        <button onClick={onStart}
+        <button onClick={()=>{if(!open)onStart();}}
           style={{width:40,height:40,borderRadius:"50%",background:BLUE,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#fff",paddingLeft:2}}>
           <I.Play size={16}/>
         </button>
-        <button ref={btnRef} onClick={openMenu} style={{background:"none",border:"none",color:MUTED,cursor:"pointer",padding:"4px 4px",fontSize:18,letterSpacing:2,flexShrink:0}}>···</button>
       </div>
-
-      {menu&&createPortal(<>
-        <div onClick={()=>setMenu(false)} style={{position:"fixed",inset:0,zIndex:9998}}/>
-        <div style={{position:"fixed",top:mPos.top,right:mPos.right,zIndex:9999,background:CARD,border:`1px solid ${LINE}`,borderRadius:14,overflow:"hidden",minWidth:170,boxShadow:"0 16px 40px rgba(0,0,0,0.9)"}}>
-          {!isP&&<button onClick={()=>{setMenu(false);onEdit();}} style={{display:"block",width:"100%",background:"none",border:"none",color:TXT,padding:"13px 16px",textAlign:"left",cursor:"pointer",fontSize:14}}>✏️ Редактировать</button>}
-          {!isP&&<div style={{height:1,background:LINE}}/>}
-          <button onClick={()=>{setMenu(false);onDelete();}} style={{display:"block",width:"100%",background:"none",border:"none",color:"#f87171",padding:"13px 16px",textAlign:"left",cursor:"pointer",fontSize:14}}>🗑 Удалить</button>
-        </div>
-      </>,document.body)}
     </div>
   );
 }
@@ -516,7 +618,9 @@ function HomeView({navigate}) {
         {/* Мои тренировки — только если есть */}
         {myWorkouts.length>0&&(
           <div style={{marginBottom:24}}>
-            <div style={{fontSize:18,fontWeight:700,marginBottom:12}}>Мои программы</div>
+            <div style={{display:"flex",alignItems:"center",marginBottom:14}}>
+              <div style={{fontSize:18,fontWeight:700}}>Мои программы</div>
+            </div>
             {myWorkouts.map(w=><WCard key={w.id} workout={w} onStart={()=>navigate("workout",w.id)} onEdit={()=>navigate("edit",w.id)} onDelete={async()=>{await db.delW(w.id);load();}}/>)}
           </div>
         )}
@@ -955,6 +1059,14 @@ function ActivePage({navigate,workoutId}) {
   const ivRef=useRef(0),woRef=useRef(null);
   const ivStartTs=useRef(null),ivInitDur=useRef(0),wStartTs=useRef(null);
   const [pph,pps]=usePress(0.93), [sph,sps]=usePress(0.93);
+  const [flash,setFlash]=useState(false);
+
+  // Вспышка + haptic при смене интервала
+  useEffect(()=>{
+    if(ivIdx===0)return;
+    setFlash(true); haptic('medium');
+    const t=setTimeout(()=>setFlash(false),350); return()=>clearTimeout(t);
+  },[ivIdx]);
 
   useEffect(()=>{(async()=>{
     const w=await db.getWById(workoutId);
@@ -986,18 +1098,20 @@ function ActivePage({navigate,workoutId}) {
       if(rem<=0){
         const next=ivRef.current+1;
         if(next<woRef.current.intervals.length){ivRef.current=next;ivStartTs.current=Date.now();ivInitDur.current=woRef.current.intervals[next].d;setIdx(next);}
-        else{clearInterval(timer.current);clearTimer();setPhase("done");const r={id:uid(),workoutId:woRef.current.id,workoutName:woRef.current.name,totalDuration:tot,completedIntervals:woRef.current.intervals.length,totalIntervals:woRef.current.intervals.length,completedAt:new Date()};db.saveR(r).then(()=>setTimeout(()=>navigate("results",r.id),400));}
+        else{clearInterval(timer.current);clearTimer();haptic('success');setPhase("done");const r={id:uid(),workoutId:woRef.current.id,workoutName:woRef.current.name,totalDuration:tot,completedIntervals:woRef.current.intervals.length,totalIntervals:woRef.current.intervals.length,completedAt:new Date()};db.saveR(r).then(()=>setTimeout(()=>navigate("results",r.id),400));}
       }
     };
     timer.current=setInterval(tick,500);return()=>clearInterval(timer.current);
   },[phase,ivIdx]);
 
   const playPause=()=>{
+    haptic('medium');
     if(phase==="ready"){setCd(3);setPhase("countdown");}
     else if(phase==="running"){clearInterval(timer.current);clearTimer();setPhase("paused");}
     else if(phase==="paused"){ivStartTs.current=Date.now()-(ivInitDur.current-tLeft)*1000;setPhase("running");}
   };
   const stop=async()=>{
+    haptic('light');
     clearInterval(timer.current);clearTimer();
     if(phase==="ready"){navigate("home");return;}
     const r={id:uid(),workoutId:woRef.current.id,workoutName:woRef.current.name,totalDuration:elapsed,completedIntervals:ivRef.current,totalIntervals:woRef.current.intervals.length,completedAt:new Date()};
@@ -1036,12 +1150,14 @@ function ActivePage({navigate,workoutId}) {
           </div>
           :<div style={{display:"flex",flexDirection:"column",alignItems:"center",width:"100%"}}>
             {/* Ring */}
-            <div style={{position:"relative",width:260,height:260,flexShrink:0}}>
-              <svg width={260} height={260} style={{transform:"rotate(-90deg)"}}>
+            <div style={{position:"relative",width:260,height:260,flexShrink:0,animation:flash?"ivFlash 0.35s ease":"none"}}>
+              {/* Вспышка при смене интервала */}
+              {flash&&<div style={{position:"absolute",inset:-10,borderRadius:"50%",background:cfg.color+"33",animation:"scaleIn 0.35s ease",pointerEvents:"none",zIndex:2}}/>}
+              <svg width={260} height={260} style={{transform:"rotate(-90deg)",animation:isWarn?"pulseWarn 0.8s ease-in-out infinite":"none"}}>
                 <circle cx={130} cy={130} r={R} fill="none" stroke={CARD2} strokeWidth={16}/>
                 <circle cx={130} cy={130} r={R} fill="none" stroke={isWarn?"#ef4444":cfg.color} strokeWidth={16} strokeLinecap="round"
                   strokeDasharray={circ} strokeDashoffset={circ*(1-prog)}
-                  style={{transition:"stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1),stroke 0.4s",filter:`drop-shadow(0 0 16px ${isWarn?"rgba(239,68,68,0.5)":cfg.color+"88"})`}}/>
+                  style={{transition:"stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1),stroke 0.4s",filter:`drop-shadow(0 0 16px ${isWarn?"rgba(239,68,68,0.7)":cfg.color+"88"})`}}/>
               </svg>
               <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
                 <div style={{fontSize:28,marginBottom:6}}>{cfg.emoji}</div>
@@ -1104,31 +1220,44 @@ function ActivePage({navigate,workoutId}) {
 // ─── RESULTS ──────────────────────────────────────────────────────────────────
 function ResultsPage({navigate,resultId}) {
   const [result,setR]=useState(null);
+  const [show,setShow]=useState(false);
   const [ph,ps]=usePress();
-  useEffect(()=>{db.getRById(resultId).then(r=>{if(!r)navigate("home");else setR(r);});},[resultId]);
+  useEffect(()=>{db.getRById(resultId).then(r=>{if(!r)navigate("home");else{setR(r);setTimeout(()=>setShow(true),100);}});},[resultId]);
   if(!result) return <Loader/>;
   const done=result.completedIntervals===result.totalIntervals;
   return (
-    <div style={{minHeight:"100vh",background:BG,color:TXT,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px"}}>
-      <div style={{width:96,height:96,borderRadius:"50%",background:done?BLUE:"#f97316",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:done?`0 0 40px ${BLUE}44`:"0 0 40px #f9731644",marginBottom:20,animation:"scaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1)"}}>
+    <div style={{minHeight:"100vh",background:BG,color:TXT,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px",overflow:"hidden"}}>
+      <Confetti active={done&&show}/>
+      {/* Trophy */}
+      <div style={{width:96,height:96,borderRadius:"50%",background:done?BLUE:"#f97316",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:done?`0 0 40px ${BLUE}66`:"0 0 40px #f9731644",marginBottom:20,animation:done?"scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both, trophyGlow 2s ease-in-out 0.6s infinite":"scaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both"}}>
         {done?<I.Trophy size={44} style={{color:"#fff"}}/>:<I.Target size={40} style={{color:"#fff"}}/>}
       </div>
-      <div style={{fontSize:26,fontWeight:700,marginBottom:6,textAlign:"center"}}>{done?"Отличная работа! 💪":"Тренировка завершена"}</div>
-      <div style={{color:SUB,marginBottom:24,textAlign:"center",fontSize:14}}>{done?"Все интервалы выполнены":"Результат сохранён"}</div>
+      <div style={{fontSize:26,fontWeight:700,marginBottom:6,textAlign:"center",animation:"popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.2s both"}}>{done?"Отличная работа! 💪":"Тренировка завершена"}</div>
+      <div style={{color:SUB,marginBottom:24,textAlign:"center",fontSize:14,animation:"fadeIn 0.4s ease 0.4s both"}}>{done?"Все интервалы выполнены":"Результат сохранён"}</div>
       <div style={{width:"100%",maxWidth:360,display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
         {[
-          {emoji:"🏃",label:"Тренировка",val:result.workoutName},
-          {emoji:"⏱",label:"Время",val:fmtD(result.totalDuration)},
-          {emoji:"🎯",label:"Интервалы",val:`${result.completedIntervals} / ${result.totalIntervals}`},
-          {emoji:"🔥",label:"Калории ~",val:`${Math.round(result.totalDuration/60*8)} ккал`},
+          {emoji:"🏃",label:"Тренировка",val:result.workoutName,num:null,delay:300},
+          {emoji:"⏱",label:"Время",val:null,num:result.totalDuration,fmt:v=>fmtD(v),delay:420},
+          {emoji:"🎯",label:"Интервалы",val:`${result.completedIntervals} / ${result.totalIntervals}`,num:null,delay:540},
+          {emoji:"🔥",label:"Калории ~",val:null,num:Math.round(result.totalDuration/60*8),fmt:v=>`${v} ккал`,delay:660},
         ].map((s,i)=>(
-          <div key={i} style={{background:CARD,borderRadius:14,padding:"13px 16px",display:"flex",alignItems:"center",gap:12}}>
-            <div style={{width:38,height:38,background:CARD2,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,flexShrink:0}}>{s.emoji}</div>
-            <div><div style={{fontSize:11,color:MUTED,marginBottom:2}}>{s.label}</div><div style={{fontSize:15,fontWeight:600}}>{s.val}</div></div>
-          </div>
+          <ResultStatCard key={i} {...s}/>
         ))}
       </div>
-      <Btn onClick={()=>navigate("home")} {...ph} style={{maxWidth:360,...ps}}>На главную</Btn>
+      <div style={{width:"100%",maxWidth:360,animation:"fadeIn 0.4s ease 0.8s both"}}>
+        <Btn onClick={()=>navigate("home")} {...ph} style={{...ps}}>На главную</Btn>
+      </div>
+    </div>
+  );
+}
+
+function ResultStatCard({emoji,label,val,num,fmt,delay}){
+  const counted=useCountUp(num||0,1000,delay);
+  const display=num!=null?fmt(counted):val;
+  return (
+    <div style={{background:CARD,borderRadius:14,padding:"13px 16px",display:"flex",alignItems:"center",gap:12,animation:`popIn 0.45s cubic-bezier(0.34,1.56,0.64,1) ${delay}ms both`}}>
+      <div style={{width:38,height:38,background:CARD2,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,flexShrink:0}}>{emoji}</div>
+      <div><div style={{fontSize:11,color:MUTED,marginBottom:2}}>{label}</div><div style={{fontSize:15,fontWeight:600}}>{display}</div></div>
     </div>
   );
 }
@@ -1198,6 +1327,11 @@ export default function App() {
       @keyframes slideUp{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
       @keyframes fadeIn{from{opacity:0}to{opacity:1}}
       @keyframes scaleIn{from{transform:scale(0.82);opacity:0}to{transform:scale(1);opacity:1}}
+      @keyframes pulseWarn{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+      @keyframes ivFlash{0%{opacity:1}20%{opacity:0.15}100%{opacity:1}}
+      @keyframes popIn{0%{transform:scale(0.7) translateY(6px);opacity:0}70%{transform:scale(1.06) translateY(-2px)}100%{transform:scale(1) translateY(0);opacity:1}}
+      @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+      @keyframes trophyGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(59,130,246,0.6))}50%{filter:drop-shadow(0 0 24px rgba(59,130,246,0.95))}}
     `;
     document.head.appendChild(s);
     return()=>{ document.head.removeChild(s); document.head.removeChild(meta); };
