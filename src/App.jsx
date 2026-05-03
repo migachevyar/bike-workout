@@ -216,10 +216,19 @@ const I={
   Heart:  p=><Svg {...p}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="currentColor" stroke="none"/></Svg>,
   Timer:  p=><Svg {...p}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/><path d="M10 2h4"/></Svg>,
   Trend:  p=><Svg {...p}><polyline points="22,7 13.5,15.5 8.5,10.5 2,17"/><polyline points="16,7 22,7 22,13"/></Svg>,
+  Star:   p=><Svg {...p}><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill="currentColor" stroke="none"/></Svg>,
+  Dumbbell:p=><Svg {...p}><path d="M6 4v16M18 4v16M8 8h8M8 16h8"/><circle cx="4" cy="8" r="2" fill="currentColor"/><circle cx="4" cy="16" r="2" fill="currentColor"/><circle cx="20" cy="8" r="2" fill="currentColor"/><circle cx="20" cy="16" r="2" fill="currentColor"/></Svg>,
+  Run:    p=><Svg {...p}><circle cx="12" cy="4" r="2" fill="currentColor"/><path d="M14.5 8.5L17 12l-3 1-2-4.5"/><path d="M9 12l-2 5h5l1-3"/><path d="M12 7l-2 5 2 2"/></Svg>,
+  Mountain:p=><Svg {...p}><polyline points="23,21 1,21"/><polyline points="9,21 12,8 20,21"/><polyline points="2,21 9,21 5,14"/></Svg>,
+  Shield: p=><Svg {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" stroke="none" fillOpacity="0.8"/></Svg>,
+  Sun:    p=><Svg {...p}><circle cx="12" cy="12" r="5" fill="currentColor"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></Svg>,
+  Award:  p=><Svg {...p}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></Svg>,
+  Wind:   p=><Svg {...p}><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></Svg>,
+  Diamond:p=><Svg {...p}><polyline points="6,3 18,3 22,9 12,22 2,9" fill="currentColor" stroke="none" fillOpacity="0.85"/></Svg>,
 };
 
 // ─── PROGRAM ICON ─────────────────────────────────────────────────────────────
-const PROG_ICON_MAP = {
+const PRESET_ICON_MAP = {
   b1:{type:"flame",bg:"linear-gradient(135deg,#f97316,#c2410c)"},
   i1:{type:"zap",  bg:"linear-gradient(135deg,#3b82f6,#1d4ed8)"},
   p2:{type:"heart",bg:"linear-gradient(135deg,#a855f7,#7c3aed)"},
@@ -227,12 +236,41 @@ const PROG_ICON_MAP = {
   b2:{type:"bike", bg:"linear-gradient(135deg,#06b6d4,#0e7490)"},
   i2:{type:"trend",bg:"linear-gradient(135deg,#22c55e,#15803d)"},
 };
-function ProgSvgIcon({id,size=50}) {
-  const cfg=PROG_ICON_MAP[id]||{type:"zap",bg:"linear-gradient(135deg,#3b82f6,#1d4ed8)"};
-  const IconComp={flame:I.Flame,zap:I.Zap,heart:I.Heart,timer:I.Timer,bike:I.Bike,trend:I.Trend}[cfg.type]||I.Zap;
+const CUSTOM_ICON_LIST = [
+  {type:"star",    bg:"linear-gradient(135deg,#f59e0b,#d97706)"},
+  {type:"dumbbell",bg:"linear-gradient(135deg,#6b7280,#374151)"},
+  {type:"run",     bg:"linear-gradient(135deg,#10b981,#059669)"},
+  {type:"mountain",bg:"linear-gradient(135deg,#64748b,#334155)"},
+  {type:"shield",  bg:"linear-gradient(135deg,#06b6d4,#0284c7)"},
+  {type:"sun",     bg:"linear-gradient(135deg,#f59e0b,#ea580c)"},
+  {type:"award",   bg:"linear-gradient(135deg,#8b5cf6,#6d28d9)"},
+  {type:"wind",    bg:"linear-gradient(135deg,#38bdf8,#0ea5e9)"},
+  {type:"diamond", bg:"linear-gradient(135deg,#ec4899,#be185d)"},
+  {type:"target",  bg:"linear-gradient(135deg,#a855f7,#9333ea)"},
+];
+const ICON_COMP_MAP = {
+  flame:I.Flame, zap:I.Zap, heart:I.Heart, timer:I.Timer, bike:I.Bike, trend:I.Trend,
+  star:I.Star, dumbbell:I.Dumbbell, run:I.Run, mountain:I.Mountain, shield:I.Shield,
+  sun:I.Sun, award:I.Award, wind:I.Wind, diamond:I.Diamond, target:I.Target,
+};
+function ProgSvgIcon({id, iconType, size=50}) {
+  // For preset programs, look up by id
+  const preset = PRESET_ICON_MAP[id];
+  // For custom, use iconType field or cycle through CUSTOM_ICON_LIST
+  let cfg;
+  if (preset) {
+    cfg = preset;
+  } else if (iconType && CUSTOM_ICON_LIST.find(c=>c.type===iconType)) {
+    cfg = CUSTOM_ICON_LIST.find(c=>c.type===iconType);
+  } else {
+    // Deterministic fallback based on id string
+    const hash = (id||"").split("").reduce((a,c)=>a+c.charCodeAt(0),0);
+    cfg = CUSTOM_ICON_LIST[hash % CUSTOM_ICON_LIST.length];
+  }
+  const IconComp = ICON_COMP_MAP[cfg.type] || I.Star;
   return (
     <div style={{width:size,height:size,borderRadius:14,background:cfg.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-      <IconComp size={24} style={{color:"#fff"}} fill="#fff" stroke="#fff"/>
+      <IconComp size={22} style={{color:"#fff"}} fill="#fff" stroke="#fff" strokeWidth={1.5}/>
     </div>
   );
 }
@@ -291,7 +329,7 @@ function BottomNav({view,setView}) {
   ];
   return (
     <nav style={{position:"fixed",bottom:0,left:0,right:0,background:"rgba(13,13,15,0.96)",backdropFilter:"blur(20px)",borderTop:`1px solid ${LINE}`,paddingBottom:"env(safe-area-inset-bottom,0px)",zIndex:100}}>
-      <div style={{display:"flex",justifyContent:"space-around",padding:"8px 0 4px"}}>
+      <div style={{display:"flex",justifyContent:"space-around",padding:"10px 0 6px"}}>
         {tabs.map(t=>(
           <button key={t.id} onClick={()=>setView(t.id)}
             style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"4px",background:"none",border:"none",cursor:"pointer",color:view===t.id?TXT:MUTED,transition:"color 0.18s"}}>
@@ -306,7 +344,7 @@ function BottomNav({view,setView}) {
 }
 
 // ─── WHEEL PICKER ─────────────────────────────────────────────────────────────
-function WheelCol({value,max,onChange}) {
+function WheelCol({value,max,onChange,renderValue}) {
   const H=44, ref=useRef(null), settling=useRef(false), settleT=useRef(null);
   const scrollTo=useCallback((v,smooth=true)=>{ if(ref.current) ref.current.scrollTo({top:v*H,behavior:smooth?"smooth":"auto"}); },[]);
   useEffect(()=>{ scrollTo(value,false); },[]);
@@ -328,7 +366,7 @@ function WheelCol({value,max,onChange}) {
         {Array.from({length:max+1},(_,v)=>(
           <div key={v} onClick={()=>{onChange(v);scrollTo(v);}}
             style={{height:H,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,fontWeight:v===value?700:300,color:v===value?TXT:"rgba(255,255,255,0.18)",fontVariantNumeric:"tabular-nums",cursor:"pointer",userSelect:"none",transition:"all 0.1s"}}>
-            {String(v).padStart(2,"0")}
+            {renderValue ? renderValue(v) : String(v).padStart(2,"0")}
           </div>
         ))}
         <div style={{height:H*2}}/>
@@ -422,41 +460,79 @@ function IvRow({iv,index,onChange,onDelete,dragHandle}) {
 
 // ─── SORTABLE LIST ────────────────────────────────────────────────────────────
 function SortList({intervals,onChange}) {
-  const [di,setDI]=useState(null), [oi,setOI]=useState(null), [gy,setGY]=useState(0);
-  const rowRefs=useRef([]), sy=useRef(0);
+  const [dragging,setDragging]=useState(null);
+  const [overIdx,setOverIdx]=useState(null);
+  const [dragY,setDragY]=useState(0);
+  const itemRefs=useRef({});
+  const startClientY=useRef(0);
 
-  const startDrag=(idx,e)=>{ sy.current=e.touches[0].clientY; setDI(idx); setOI(idx); };
+  const startDrag=(idx,e)=>{
+    e.stopPropagation();
+    startClientY.current=e.touches[0].clientY;
+    setDragging(idx); setOverIdx(idx); setDragY(0);
+    haptic('light');
+  };
 
   const onMove=useCallback(e=>{
-    if(di===null)return; e.preventDefault();
-    const y=e.touches[0].clientY; setGY(y-sy.current);
-    let best=di;
-    rowRefs.current.forEach((r,i)=>{ if(!r)return; const rc=r.getBoundingClientRect(),mid=rc.top+rc.height/2; if(Math.abs(y-mid)<rc.height*0.6)best=i; });
-    setOI(Math.max(0,Math.min(intervals.length-1,best)));
-  },[di,intervals.length]);
+    if(dragging===null)return;
+    e.preventDefault();
+    const dy=e.touches[0].clientY-startClientY.current;
+    setDragY(dy);
+    const y=e.touches[0].clientY;
+    let best=dragging, bestDist=Infinity;
+    intervals.forEach((iv,i)=>{
+      const el=itemRefs.current[iv.id];
+      if(!el||i===dragging)return;
+      const rect=el.getBoundingClientRect();
+      const mid=rect.top+rect.height/2;
+      const dist=Math.abs(y-mid);
+      if(dist<bestDist){bestDist=dist;best=i;}
+    });
+    setOverIdx(Math.max(0,Math.min(intervals.length-1,best)));
+  },[dragging,intervals]);
 
   const onEnd=useCallback(()=>{
-    if(di!==null&&oi!==null&&di!==oi){ const a=[...intervals],[item]=a.splice(di,1); a.splice(oi,0,item); onChange(a); }
-    setDI(null); setOI(null); setGY(0);
-  },[di,oi,intervals,onChange]);
+    if(dragging!==null&&overIdx!==null&&dragging!==overIdx){
+      const arr=[...intervals],[item]=arr.splice(dragging,1);
+      arr.splice(overIdx,0,item); onChange(arr);
+    }
+    setDragging(null); setOverIdx(null); setDragY(0);
+  },[dragging,overIdx,intervals,onChange]);
 
   useEffect(()=>{
-    if(di!==null){ window.addEventListener("touchmove",onMove,{passive:false}); window.addEventListener("touchend",onEnd); return()=>{ window.removeEventListener("touchmove",onMove); window.removeEventListener("touchend",onEnd); }; }
-  },[di,onMove,onEnd]);
+    if(dragging!==null){
+      window.addEventListener("touchmove",onMove,{passive:false});
+      window.addEventListener("touchend",onEnd);
+      return()=>{window.removeEventListener("touchmove",onMove);window.removeEventListener("touchend",onEnd);};
+    }
+  },[dragging,onMove,onEnd]);
 
-  let disp=intervals.map((_,i)=>i);
-  if(di!==null&&oi!==null&&di!==oi){ disp=[...disp]; const[item]=disp.splice(di,1); disp.splice(oi,0,item); }
+  let order=intervals.map((_,i)=>i);
+  if(dragging!==null&&overIdx!==null&&dragging!==overIdx){
+    order=[...order];const[item]=order.splice(dragging,1);order.splice(overIdx,0,item);
+  }
 
   return (
-    <div>{disp.map((orig,disp)=>{
-      const iv=intervals[orig], isDrag=di===orig, isTgt=oi===disp&&di!==null&&di!==orig;
-      return (
-        <div key={iv.id} ref={el=>rowRefs.current[disp]=el}
-          style={{transform:isDrag?`translateY(${gy}px) scale(1.02)`:isTgt?"translateY(3px)":"translateY(0)",transition:isDrag?"none":"transform 0.18s ease",zIndex:isDrag?20:1,position:"relative",boxShadow:isDrag?"0 8px 32px rgba(0,0,0,0.6)":"none",opacity:isDrag?0.9:1}}>
-          <IvRow iv={iv} index={disp} onChange={u=>onChange(intervals.map((x,i)=>i===orig?u:x))} onDelete={()=>onChange(intervals.filter((_,i)=>i!==orig))} dragHandle={{onTouchStart:e=>{e.stopPropagation();startDrag(orig,e);}}}/>
-        </div>
-      );
-    })}</div>
+    <div>
+      {order.map((origIdx,dispIdx)=>{
+        const iv=intervals[origIdx];
+        const isDrag=dragging===origIdx;
+        const isGap=overIdx===dispIdx&&dragging!==null&&!isDrag;
+        return (
+          <div key={iv.id} ref={el=>{itemRefs.current[iv.id]=el;}}
+            style={{transform:isDrag?`translateY(${dragY}px) scale(1.02)`:isGap?"translateY(3px)":"translateY(0)",
+              transition:isDrag?"none":"transform 0.18s ease",
+              zIndex:isDrag?20:1,position:"relative",
+              boxShadow:isDrag?"0 8px 32px rgba(0,0,0,0.6)":"none",
+              opacity:isDrag?0.92:1}}>
+            <IvRow iv={iv} index={dispIdx}
+              onChange={u=>onChange(intervals.map((x,i)=>i===origIdx?u:x))}
+              onDelete={()=>onChange(intervals.filter((_,i)=>i!==origIdx))}
+              dragHandle={{onTouchStart:e=>{e.stopPropagation();startDrag(origIdx,e);}}}/>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -487,7 +563,7 @@ function ProgCard({prog,onStart,added}) {
         </div>
         {/* Play button */}
         <button onClick={e=>{e.stopPropagation();onStart(prog);}}
-          style={{width:40,height:40,borderRadius:"50%",background:added?"#27272a":BLUE,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#fff",paddingLeft:2,transition:"background 0.15s"}}>
+          style={{width:42,height:42,borderRadius:"50%",background:BLUE,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#fff",paddingLeft:2}}>
           <I.Play size={16}/>
         </button>
       </div>
@@ -547,7 +623,7 @@ function WCard({workout,onStart,onEdit,onDelete}) {
           transform:`translateX(${tx}px)`,
           transition:(drag.current&&isH.current)?"none":"transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)",
           position:"relative",zIndex:1,userSelect:"none",touchAction:(!isP&&open)?"none":"pan-y"}}>
-        <ProgSvgIcon id={workout.id}/>
+        <ProgSvgIcon id={workout.id} iconType={workout.iconType}/>
         <div {...ph} onClick={()=>{if(!open)onStart();}} style={{...ps,flex:1,minWidth:0,cursor:"pointer"}}>
           <div style={{fontSize:15,fontWeight:600,marginBottom:4,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{workout.name}</div>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
@@ -557,7 +633,7 @@ function WCard({workout,onStart,onEdit,onDelete}) {
           <IvBar intervals={ivs} h={3}/>
         </div>
         <button onClick={()=>{if(!open)onStart();}}
-          style={{width:40,height:40,borderRadius:"50%",background:BLUE,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#fff",paddingLeft:2}}>
+          style={{width:42,height:42,borderRadius:"50%",background:BLUE,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#fff",paddingLeft:2}}>
           <I.Play size={16}/>
         </button>
       </div>
@@ -721,12 +797,9 @@ function StatsView({navigate}) {
 
   return (
     <Page>
-      <div style={{padding:"16px 16px 0",marginBottom:4}}>
-      </div>
-
       <div style={{padding:"0 16px"}}>
         {/* Week chart card */}
-        <div style={{background:CARD,borderRadius:20,padding:"18px",marginBottom:14,marginTop:16}}>
+        <div style={{background:CARD,borderRadius:20,padding:"18px",marginBottom:14,marginTop:8}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
             <div>
               <div style={{fontSize:13,color:SUB,marginBottom:4}}>Эта неделя</div>
@@ -771,19 +844,7 @@ function StatsView({navigate}) {
           <>
             <div style={{fontSize:18,fontWeight:700,marginBottom:12,animation:"fadeIn 0.4s ease both"}}>Последние тренировки</div>
             {history.map((r,i)=>(
-              <div key={r.id} style={{background:CARD,borderRadius:14,padding:"13px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",
-                animation:`statIn 0.35s ease ${Math.min(i,6)*55}ms both`}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
-                    <div style={{fontSize:15,fontWeight:600,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{r.workoutName}</div>
-                  </div>
-                  <div style={{fontSize:12,color:SUB}}>{new Date(r.completedAt).toLocaleDateString("ru-RU",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}</div>
-                </div>
-                <div style={{textAlign:"right",flexShrink:0,marginLeft:12}}>
-                  <div style={{fontSize:20,fontWeight:700}}>{Math.round(r.totalDuration/60)}</div>
-                  <div style={{fontSize:12,color:SUB}}>мин</div>
-                </div>
-              </div>
+              <HCard key={r.id} result={r} onClick={()=>navigate("details",r.id)} onDelete={()=>delR(r.id)}/>
             ))}
           </>
         )}
@@ -804,19 +865,24 @@ function StatsView({navigate}) {
 function WeightPicker({current, onSave, onClose}) {
   const parsed = parseFloat(String(current).replace(",",".")) || 70;
   const [kg, setKg]   = useState(Math.floor(parsed));
-  const [dec, setDec] = useState(Math.round((parsed % 1) * 10));
+  const [dec, setDec] = useState(Math.round((parsed % 1) * 10)); // 0-9 → 0г-900г
 
   return createPortal(
     <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"flex-end"}} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:CARD,borderRadius:"20px 20px 0 0",padding:"20px 20px",paddingBottom:"max(32px,env(safe-area-inset-bottom,32px))"}}>
         <div style={{width:36,height:4,background:MUTED,borderRadius:2,margin:"0 auto 20px"}}/>
         <div style={{fontSize:16,fontWeight:600,marginBottom:4,textAlign:"center"}}>Текущий вес</div>
-        <div style={{fontSize:13,color:SUB,textAlign:"center",marginBottom:20}}>{kg},{dec} кг</div>
-        <div style={{display:"flex",alignItems:"center",gap:4}}>
-          <WheelCol value={kg}  max={200} onChange={setKg}/>
-          <div style={{fontSize:28,fontWeight:300,color:MUTED,flexShrink:0}}>,</div>
-          <WheelCol value={dec} max={9}   onChange={setDec}/>
-          <div style={{fontSize:16,color:SUB,flexShrink:0,paddingBottom:6}}>кг</div>
+        <div style={{fontSize:13,color:SUB,textAlign:"center",marginBottom:20}}>{kg} кг {dec*100} г</div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <div style={{flex:1}}>
+            <WheelCol value={kg} max={200} onChange={setKg} renderValue={v=>String(v)}/>
+            <div style={{textAlign:"center",fontSize:12,color:SUB,marginTop:6}}>кг</div>
+          </div>
+          <div style={{fontSize:28,fontWeight:200,color:MUTED,flexShrink:0,paddingBottom:24}}>·</div>
+          <div style={{flex:1}}>
+            <WheelCol value={dec} max={9} onChange={setDec} renderValue={v=>String(v*100)}/>
+            <div style={{textAlign:"center",fontSize:12,color:SUB,marginTop:6}}>граммы</div>
+          </div>
         </div>
         <div style={{display:"flex",gap:10,marginTop:20}}>
           <button onClick={onClose} style={{flex:1,background:CARD2,border:`1px solid ${LINE}`,borderRadius:12,padding:"13px",color:TXT,fontSize:14,fontWeight:600,cursor:"pointer"}}>Отмена</button>
@@ -914,25 +980,17 @@ function ProfileView() {
         {/* Profile card */}
         <div style={{background:CARD,borderRadius:20,padding:"18px",marginBottom:14}}>
           <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:has&&!editing?14:0}}>
-            {/* Photo + upload */}
-            <div style={{position:"relative",flexShrink:0}}>
-              <div style={{width:62,height:62,borderRadius:"50%",background:"linear-gradient(135deg,#3b82f6,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
-                {photoUrl&&photoOk
-                  ?<img src={photoUrl} referrerPolicy="no-referrer" alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} onError={()=>setPhotoOk(false)}/>
-                  :<div style={{fontSize:22,fontWeight:700,color:"#fff"}}>{initials}</div>
-                }
-              </div>
-              <div style={{position:"absolute",bottom:-2,right:-2,width:22,height:22,borderRadius:"50%",background:BLUE,display:"flex",alignItems:"center",justifyContent:"center",border:`2px solid ${CARD}`}}>
-                <I.Plus size={12} style={{color:"#fff"}}/>
-              </div>
+            {/* Photo */}
+            <div style={{width:62,height:62,borderRadius:"50%",background:"linear-gradient(135deg,#3b82f6,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
+              {photoUrl&&photoOk
+                ?<img src={photoUrl} referrerPolicy="no-referrer" alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} onError={()=>setPhotoOk(false)}/>
+                :<div style={{fontSize:22,fontWeight:700,color:"#fff"}}>{initials}</div>
+              }
             </div>
-            {/* Info */}
+            {/* Info — имя и возраст рядом с фото */}
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:19,fontWeight:700,marginBottom:3}}>{displayName||"—"}</div>
-              <div style={{fontSize:14,color:SUB}}>
-                {[profile.age&&`${profile.age} лет`,curWeight&&`${curWeight} кг`].filter(Boolean).join(" • ")}
-              </div>
-              {userLevel&&<div style={{marginTop:6}}><span style={{fontSize:11,fontWeight:700,color:lc,background:lc+"18",borderRadius:6,padding:"2px 8px"}}>{LEVEL_LABEL[userLevel]}</span></div>}
+              <div style={{fontSize:19,fontWeight:700,marginBottom:4}}>{displayName||"—"}</div>
+              {profile.age&&<div style={{fontSize:14,color:SUB}}>{profile.age} лет</div>}
             </div>
           </div>
 
@@ -955,9 +1013,7 @@ function ProfileView() {
         {/* Weight chart */}
         {has&&!editing&&wPoints.length>0&&(
           <div style={{background:CARD,borderRadius:20,padding:"18px",marginBottom:14}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-              <div style={{fontSize:16,fontWeight:700}}>Динамика веса</div>
-            </div>
+            <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Динамика веса</div>
             <LineChart points={wPoints}/>
             {weightDiff!==null&&(
               <div style={{marginTop:10,fontSize:14,fontWeight:600,color:parseFloat(weightDiff)<0?"#4ade80":"#f87171"}}>
@@ -982,15 +1038,14 @@ function ProfileView() {
           </div>
         )}
 
-        {/* Edit form */}
+        {/* Edit form — без поля веса */}
         {editing&&(
           <div style={{background:CARD,borderRadius:20,padding:"18px",marginBottom:14}}>
             <div style={{fontSize:16,fontWeight:700,marginBottom:16}}>Редактировать</div>
             {[
-              {k:"name",  l:"Имя",          pl:"Введите имя", type:"text"},
-              {k:"age",   l:"Возраст",      pl:"—",           type:"number",s:"лет"},
-              {k:"weight",l:"Текущий вес",  pl:"—",           type:"number",s:"кг"},
-              {k:"targetWeight",l:"Целевой вес",pl:"—",       type:"number",s:"кг"},
+              {k:"name",       l:"Имя",         pl:"Введите имя", type:"text"},
+              {k:"age",        l:"Возраст",     pl:"—",           type:"number", s:"лет"},
+              {k:"targetWeight",l:"Целевой вес",pl:"—",           type:"number", s:"кг"},
             ].map(f=>(
               <div key={f.k} style={{marginBottom:14}}>
                 <div style={{fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:6}}>{f.l}</div>
@@ -1017,11 +1072,20 @@ function ProfileView() {
 function CreatePage({navigate,editId}) {
   const [name,setName]=useState("");
   const [intervals,setIV]=useState([]);
+  const [iconType,setIconType]=useState(CUSTOM_ICON_LIST[0].type);
   const [loading,setLoad]=useState(!!editId);
 
   useEffect(()=>{(async()=>{
-    if(editId){const w=await db.getWById(editId);if(w){setName(w.name);setIV(w.intervals.map(iv=>({...iv,t:iv.t||iv.type,d:iv.d||iv.duration,type:iv.t||iv.type,duration:iv.d||iv.duration})));}}
-    else setIV([{id:uid(),t:"slow",type:"slow",d:180,duration:180},{id:uid(),t:"fast",type:"fast",d:60,duration:60},{id:uid(),t:"slow",type:"slow",d:120,duration:120}]);
+    if(editId){
+      const w=await db.getWById(editId);
+      if(w){
+        setName(w.name);
+        setIV(w.intervals.map(iv=>({...iv,t:iv.t||iv.type,d:iv.d||iv.duration,type:iv.t||iv.type,duration:iv.d||iv.duration})));
+        if(w.iconType)setIconType(w.iconType);
+      }
+    } else {
+      setIV([{id:uid(),t:"slow",type:"slow",d:180,duration:180},{id:uid(),t:"fast",type:"fast",d:60,duration:60},{id:uid(),t:"slow",type:"slow",d:120,duration:120}]);
+    }
     setLoad(false);
   })();},[editId]);
 
@@ -1029,7 +1093,7 @@ function CreatePage({navigate,editId}) {
   const save=async()=>{
     if(!name.trim()){alert("Введите название");return;}
     if(!intervals.length){alert("Добавьте интервал");return;}
-    await db.saveW({id:editId||uid(),name:name.trim(),intervals});
+    await db.saveW({id:editId||uid(),name:name.trim(),intervals,iconType});
     navigate("home");
   };
   const norm=arr=>arr.map(iv=>({...iv,t:iv.t||iv.type,d:iv.d||iv.duration,type:iv.t||iv.type,duration:iv.d||iv.duration}));
@@ -1038,21 +1102,42 @@ function CreatePage({navigate,editId}) {
 
   return (
     <div style={{minHeight:"100vh",background:BG,color:TXT,boxSizing:"border-box",paddingTop:ST}}>
-      {/* Sticky header */}
-      <div style={{position:"sticky",top:ST,background:"rgba(13,13,15,0.97)",backdropFilter:"blur(20px)",borderBottom:`1px solid ${LINE}`,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",zIndex:10}}>
+      {/* Sticky header — только назад + заголовок */}
+      <div style={{position:"sticky",top:ST,background:"rgba(13,13,15,0.97)",backdropFilter:"blur(20px)",borderBottom:`1px solid ${LINE}`,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,zIndex:10}}>
         <RndBtn onClick={()=>navigate("home")}><I.Back size={18}/></RndBtn>
-        <div style={{fontSize:15,fontWeight:600}}>{editId?"Редактировать":"Создать тренировку"}</div>
-        <button onClick={save} disabled={!name.trim()||!intervals.length} style={{background:"none",border:"none",color:(!name.trim()||!intervals.length)?MUTED:BLUE,fontSize:15,fontWeight:700,cursor:"pointer"}}>Готово</button>
+        <div style={{fontSize:16,fontWeight:700}}>{editId?"Редактировать":"Создать тренировку"}</div>
       </div>
 
-      <div style={{padding:"20px 16px 48px"}}>
+      <div style={{padding:"20px 16px 32px"}}>
+        {/* Иконка */}
+        <div style={{marginBottom:24}}>
+          <div style={{fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:12}}>Иконка</div>
+          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+            {CUSTOM_ICON_LIST.map(ic=>{
+              const sel=ic.type===iconType;
+              const Comp=ICON_COMP_MAP[ic.type]||I.Star;
+              return (
+                <button key={ic.type} onClick={()=>setIconType(ic.type)}
+                  style={{width:48,height:48,borderRadius:13,background:ic.bg,border:sel?`2px solid #fff`:"2px solid transparent",
+                    display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",
+                    boxShadow:sel?"0 0 0 3px rgba(255,255,255,0.25)":"none",
+                    transition:"all 0.15s",transform:sel?"scale(1.1)":"scale(1)"}}>
+                  <Comp size={20} style={{color:"#fff"}} fill="#fff" stroke="#fff" strokeWidth={1.5}/>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Название */}
         <div style={{marginBottom:24}}>
           <div style={{fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Название</div>
           <input value={name} onChange={e=>setName(e.target.value)} placeholder="Моя тренировка"
             style={{width:"100%",background:CARD,border:`1px solid ${LINE}`,borderRadius:14,color:TXT,fontSize:16,padding:"14px",outline:"none",boxSizing:"border-box"}}/>
         </div>
 
-        <div>
+        {/* Интервалы */}
+        <div style={{marginBottom:24}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
             <div style={{fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:"0.07em"}}>Интервалы</div>
             {total>0&&<div style={{fontSize:13,color:MUTED}}>{fmtD(total)}</div>}
@@ -1067,6 +1152,9 @@ function CreatePage({navigate,editId}) {
             <I.Plus size={15}/>Добавить интервал
           </button>
         </div>
+
+        {/* Кнопка Сохранить внизу */}
+        <Btn onClick={save} disabled={!name.trim()||!intervals.length}>Сохранить</Btn>
       </div>
     </div>
   );
@@ -1154,17 +1242,17 @@ function ActivePage({navigate,workoutId}) {
 
   return (
     <div style={{height:"100vh",background:BG,color:TXT,display:"flex",flexDirection:"column",paddingTop:ST,boxSizing:"border-box",overflow:"hidden"}}>
-      {/* Header */}
-      <div style={{padding:"10px 16px 0",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+      {/* Header — компактный */}
+      <div style={{padding:"6px 16px 0",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
         <div>
-          <div style={{fontSize:15,fontWeight:600}}>{workout.name}</div>
-          <div style={{fontSize:12,color:SUB,marginTop:1}}>Интервал {ivIdx+1} из {workout.intervals.length}</div>
+          <div style={{fontSize:14,fontWeight:600}}>{workout.name}</div>
+          <div style={{fontSize:11,color:SUB,marginTop:1}}>Интервал {ivIdx+1} из {workout.intervals.length}</div>
         </div>
         <RndBtn onClick={stop}><I.X size={18}/></RndBtn>
       </div>
 
       {/* Progress bar */}
-      <div style={{margin:"8px 16px 0",height:3,background:CARD2,borderRadius:2,flexShrink:0,overflow:"hidden"}}>
+      <div style={{margin:"6px 16px 0",height:3,background:CARD2,borderRadius:2,flexShrink:0,overflow:"hidden"}}>
         <div style={{height:"100%",width:`${(ivIdx/workout.intervals.length)*100}%`,background:BLUE,borderRadius:2,transition:"width 0.6s ease"}}/>
       </div>
 
@@ -1176,16 +1264,18 @@ function ActivePage({navigate,workoutId}) {
             <div key={cd} style={{fontSize:112,fontWeight:100,lineHeight:1,color:cd>0?BLUE:"#4ade80",animation:cd>0?"cdBounce 0.45s cubic-bezier(0.34,1.56,0.64,1) both":"cdGo 0.5s cubic-bezier(0.34,1.56,0.64,1) both",display:"inline-block"}}>{cd||"GO!"}</div>
           </div>
           :<div style={{display:"flex",flexDirection:"column",alignItems:"center",width:"100%"}}>
-            {/* Ring */}
+            {/* Ring — анимация пульсации НА обёртке, чтобы не сбивать rotate SVG */}
             <div style={{position:"relative",width:260,height:260,flexShrink:0,animation:flash?"ivFlash 0.35s ease":"none"}}>
-              {/* Вспышка при смене интервала */}
               {flash&&<div style={{position:"absolute",inset:-10,borderRadius:"50%",background:cfg.color+"33",animation:"scaleIn 0.35s ease",pointerEvents:"none",zIndex:2}}/>}
-              <svg width={260} height={260} style={{transform:"rotate(-90deg)",animation:isWarn?"pulseWarn 0.8s ease-in-out infinite":"none"}}>
-                <circle cx={130} cy={130} r={R} fill="none" stroke={CARD2} strokeWidth={16}/>
-                <circle cx={130} cy={130} r={R} fill="none" stroke={isWarn?"#ef4444":cfg.color} strokeWidth={16} strokeLinecap="round"
-                  strokeDasharray={circ} strokeDashoffset={circ*(1-prog)}
-                  style={{transition:"stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1),stroke 0.4s",filter:`drop-shadow(0 0 16px ${isWarn?"rgba(239,68,68,0.7)":cfg.color+"88"})`}}/>
-              </svg>
+              {/* Обёртка для анимации scale — отдельно от rotate */}
+              <div style={{animation:isWarn?"pulseWarn 0.8s ease-in-out infinite":"none",width:"100%",height:"100%"}}>
+                <svg width={260} height={260} style={{transform:"rotate(-90deg)"}}>
+                  <circle cx={130} cy={130} r={R} fill="none" stroke={CARD2} strokeWidth={16}/>
+                  <circle cx={130} cy={130} r={R} fill="none" stroke={isWarn?"#ef4444":cfg.color} strokeWidth={16} strokeLinecap="round"
+                    strokeDasharray={circ} strokeDashoffset={circ*(1-prog)}
+                    style={{transition:"stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1),stroke 0.4s",filter:`drop-shadow(0 0 16px ${isWarn?"rgba(239,68,68,0.7)":cfg.color+"88"})`}}/>
+                </svg>
+              </div>
               <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
                 <div style={{fontSize:28,marginBottom:6}}>{cfg.emoji}</div>
                 <div style={{fontSize:11,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:isWarn?"#ef4444":cfg.color,marginBottom:10}}>{cfg.label}</div>
@@ -1194,7 +1284,7 @@ function ActivePage({navigate,workoutId}) {
             </div>
 
             {/* Stats */}
-            <div style={{display:"flex",gap:10,marginTop:14,width:"100%",maxWidth:260}}>
+            <div style={{display:"flex",gap:10,marginTop:12,width:"100%",maxWidth:260}}>
               {[
                 {l:"ПРОШЛО",v:fmtT(elapsed),a:false},
                 {l:"ИНТЕРВАЛ",v:`${ivIdx+1}/${workout.intervals.length}`,a:true},
@@ -1227,17 +1317,21 @@ function ActivePage({navigate,workoutId}) {
         }
       </div>
 
-      {/* Controls */}
+      {/* Controls — подняты выше, крупнее */}
       {phase!=="countdown"&&(
-        <div style={{flexShrink:0,padding:"12px 20px",paddingBottom:"max(18px,env(safe-area-inset-bottom,18px))",display:"flex",alignItems:"center",justifyContent:"center",gap:24}}>
-          <button onClick={stop} {...sph} style={{...sps,width:52,height:52,borderRadius:"50%",background:CARD,border:`1px solid ${LINE}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:TXT}}><I.Stop size={20}/></button>
-          <button onClick={()=>{addPlayRipple();playPause();}} {...pph} style={{...pps,width:78,height:78,borderRadius:"50%",background:cfg.color,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:`0 0 32px ${cfg.color}66`,color:BG,position:"relative",overflow:"hidden"}}>
-            {playRipples.map(r=><span key={r} style={{position:"absolute",inset:0,borderRadius:"50%",background:"rgba(255,255,255,0.25)",animation:"ripple 0.55s ease-out forwards"}}/>)}
-            {phase==="running"?<I.Pause size={26}/>:<I.Play size={26}/>}
+        <div style={{flexShrink:0,padding:"16px 20px",paddingBottom:"max(28px,env(safe-area-inset-bottom,28px))",display:"flex",alignItems:"center",justifyContent:"center",gap:28}}>
+          <button onClick={stop} {...sph} style={{...sps,width:56,height:56,borderRadius:"50%",background:CARD,border:`1px solid ${LINE}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,cursor:"pointer",color:TXT}}>
+            <I.Stop size={20}/>
+            <span style={{fontSize:9,color:MUTED,letterSpacing:"0.08em"}}>СТОП</span>
           </button>
-          <div style={{width:52,textAlign:"center"}}>
-            <div style={{fontSize:10,color:MUTED,marginBottom:3,letterSpacing:"0.1em"}}>ТЕМП</div>
-            <div style={{fontSize:22}}>{cfg.emoji}</div>
+          <button onClick={()=>{addPlayRipple();playPause();}} {...pph} style={{...pps,width:82,height:82,borderRadius:"50%",background:cfg.color,border:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,cursor:"pointer",boxShadow:`0 0 32px ${cfg.color}66`,color:BG,position:"relative",overflow:"hidden"}}>
+            {playRipples.map(r=><span key={r} style={{position:"absolute",inset:0,borderRadius:"50%",background:"rgba(255,255,255,0.25)",animation:"ripple 0.55s ease-out forwards"}}/>)}
+            {phase==="running"?<I.Pause size={28}/>:<I.Play size={28}/>}
+            <span style={{fontSize:9,letterSpacing:"0.08em",fontWeight:700}}>{phase==="running"?"ПАУЗА":"СТАРТ"}</span>
+          </button>
+          <div style={{width:56,height:56,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3}}>
+            <div style={{fontSize:26}}>{cfg.emoji}</div>
+            <span style={{fontSize:9,color:MUTED,letterSpacing:"0.08em"}}>ТЕМП</span>
           </div>
         </div>
       )}
