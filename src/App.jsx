@@ -174,7 +174,21 @@ function Confetti({active}){
   return <canvas ref={ref} style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:9999}}/>;
 }
 
-// ─── ICONS ────────────────────────────────────────────────────────────────────
+// ─── ANIMATED NUMBER ──────────────────────────────────────────────────────────
+function AnimNum({target,suffix="",style={}}){
+  const v=useCountUp(target,900,0);
+  return <div style={style}>{v.toLocaleString("ru-RU")}{suffix}</div>;
+}
+function StatGridCard({label,num,sub,delay}){
+  const v=useCountUp(num,900,delay);
+  return (
+    <div style={{background:CARD,borderRadius:16,padding:"16px",animation:`statIn 0.4s ease ${delay}ms both`}}>
+      <div style={{fontSize:12,color:SUB,marginBottom:8,lineHeight:1.3}}>{label}</div>
+      <div style={{fontSize:26,fontWeight:700}}>{v.toLocaleString("ru-RU")}</div>
+      <div style={{fontSize:13,color:MUTED}}>{sub}</div>
+    </div>
+  );
+}
 const Svg=({size=20,children,...p})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...p}>{children}</svg>;
 const I={
   Back:   p=><Svg {...p}><path d="M19 12H5M12 19l-7-7 7-7"/></Svg>,
@@ -244,8 +258,23 @@ function IvBar({intervals=[],h=4}) {
 
 const Btn=({onClick,children,disabled,variant="primary",style={}})=>{
   const [ph,ps]=usePress(0.97);
+  const [ripples,setRipples]=useState([]);
   const bg=disabled?"#27272a":variant==="primary"?BLUE:CARD2;
-  return <button onClick={onClick} disabled={disabled} {...ph} style={{width:"100%",background:bg,border:`1px solid ${disabled?"#27272a":variant==="primary"?BLUE:LINE}`,borderRadius:12,padding:"13px",color:disabled?MUTED:TXT,fontSize:14,fontWeight:600,cursor:disabled?"default":"pointer",...ps,...style}}>{children}</button>;
+  const addRipple=e=>{
+    if(disabled)return;
+    const rect=e.currentTarget.getBoundingClientRect();
+    const x=e.clientX-rect.left, y=e.clientY-rect.top;
+    const id=Date.now();
+    setRipples(r=>[...r,{id,x,y}]);
+    setTimeout(()=>setRipples(r=>r.filter(r=>r.id!==id)),600);
+    if(onClick)onClick(e);
+  };
+  return <button onClick={addRipple} disabled={disabled} {...ph} style={{width:"100%",background:bg,border:`1px solid ${disabled?"#27272a":variant==="primary"?BLUE:LINE}`,borderRadius:12,padding:"13px",color:disabled?MUTED:TXT,fontSize:14,fontWeight:600,cursor:disabled?"default":"pointer",position:"relative",overflow:"hidden",...ps,...style}}>
+    {ripples.map(r=>(
+      <span key={r.id} style={{position:"absolute",left:r.x,top:r.y,width:12,height:12,borderRadius:"50%",background:"rgba(255,255,255,0.35)",transform:"translate(-50%,-50%) scale(0)",animation:"ripple 0.55s ease-out forwards",pointerEvents:"none"}}/>
+    ))}
+    {children}
+  </button>;
 };
 
 const RndBtn=({onClick,children,style={}})=>{
@@ -701,11 +730,11 @@ function StatsView({navigate}) {
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
             <div>
               <div style={{fontSize:13,color:SUB,marginBottom:4}}>Эта неделя</div>
-              <div style={{fontSize:28,fontWeight:700}}>{weekMins} минут</div>
+              <AnimNum target={weekMins} suffix=" минут" style={{fontSize:28,fontWeight:700}}/>
             </div>
             <div style={{textAlign:"right"}}>
               <div style={{fontSize:13,color:SUB,marginBottom:4}}>Тренировок</div>
-              <div style={{fontSize:28,fontWeight:700}}>{weekCount}</div>
+              <AnimNum target={weekCount} style={{fontSize:28,fontWeight:700}}/>
             </div>
           </div>
 
@@ -716,7 +745,8 @@ function StatsView({navigate}) {
                 <div style={{width:"100%",borderRadius:"5px 5px 0 0",
                   background:d.mins>0?BLUE:"#27272a",
                   height:d.mins>0?`${Math.max(10,(d.mins/maxMins)*68)}px`:"6px",
-                  transition:"height 0.5s ease",
+                  transformOrigin:"bottom",
+                  animation:`barGrow 0.5s cubic-bezier(0.34,1.56,0.64,1) ${i*60}ms both`,
                   boxShadow:d.mins>0?`0 0 12px ${BLUE}55`:"none"}}/>
               </div>
             ))}
@@ -731,23 +761,18 @@ function StatsView({navigate}) {
         {/* Stats grid */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
           {[
-            {label:"Всего калорий",val:totalKcal.toLocaleString("ru-RU"),sub:"ккал"},
-            {label:"Средняя длительность",val:avgMins,sub:"мин"},
-          ].map((s,i)=>(
-            <div key={i} style={{background:CARD,borderRadius:16,padding:"16px"}}>
-              <div style={{fontSize:12,color:SUB,marginBottom:8,lineHeight:1.3}}>{s.label}</div>
-              <div style={{fontSize:26,fontWeight:700}}>{s.val}</div>
-              <div style={{fontSize:13,color:MUTED}}>{s.sub}</div>
-            </div>
-          ))}
+            {label:"Всего калорий",num:totalKcal,sub:"ккал",delay:200},
+            {label:"Средняя длительность",num:avgMins,sub:"мин",delay:320},
+          ].map((s,i)=><StatGridCard key={i} {...s}/>)}
         </div>
 
         {/* Recent workouts */}
         {history.length>0&&(
           <>
-            <div style={{fontSize:18,fontWeight:700,marginBottom:12}}>Последние тренировки</div>
-            {history.map(r=>(
-              <div key={r.id} style={{background:CARD,borderRadius:14,padding:"13px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div style={{fontSize:18,fontWeight:700,marginBottom:12,animation:"fadeIn 0.4s ease both"}}>Последние тренировки</div>
+            {history.map((r,i)=>(
+              <div key={r.id} style={{background:CARD,borderRadius:14,padding:"13px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",
+                animation:`statIn 0.35s ease ${Math.min(i,6)*55}ms both`}}>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
                     <div style={{fontSize:15,fontWeight:600,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{r.workoutName}</div>
@@ -1060,6 +1085,8 @@ function ActivePage({navigate,workoutId}) {
   const ivStartTs=useRef(null),ivInitDur=useRef(0),wStartTs=useRef(null);
   const [pph,pps]=usePress(0.93), [sph,sps]=usePress(0.93);
   const [flash,setFlash]=useState(false);
+  const [playRipples,setPlayRipples]=useState([]);
+  const addPlayRipple=()=>{const id=Date.now();setPlayRipples(r=>[...r,id]);setTimeout(()=>setPlayRipples(r=>r.filter(x=>x!==id)),600);};
 
   // Вспышка + haptic при смене интервала
   useEffect(()=>{
@@ -1145,8 +1172,8 @@ function ActivePage({navigate,workoutId}) {
       <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 20px",minHeight:0}}>
         {phase==="countdown"
           ?<div style={{textAlign:"center"}}>
-            <div style={{fontSize:12,color:SUB,marginBottom:16,letterSpacing:"0.12em"}}>ПРИГОТОВЬТЕСЬ</div>
-            <div style={{fontSize:112,fontWeight:100,lineHeight:1,color:BLUE}}>{cd||"GO!"}</div>
+            <div style={{fontSize:12,color:SUB,marginBottom:16,letterSpacing:"0.12em",animation:"fadeIn 0.3s ease"}}>ПРИГОТОВЬТЕСЬ</div>
+            <div key={cd} style={{fontSize:112,fontWeight:100,lineHeight:1,color:cd>0?BLUE:"#4ade80",animation:cd>0?"cdBounce 0.45s cubic-bezier(0.34,1.56,0.64,1) both":"cdGo 0.5s cubic-bezier(0.34,1.56,0.64,1) both",display:"inline-block"}}>{cd||"GO!"}</div>
           </div>
           :<div style={{display:"flex",flexDirection:"column",alignItems:"center",width:"100%"}}>
             {/* Ring */}
@@ -1204,7 +1231,8 @@ function ActivePage({navigate,workoutId}) {
       {phase!=="countdown"&&(
         <div style={{flexShrink:0,padding:"12px 20px",paddingBottom:"max(18px,env(safe-area-inset-bottom,18px))",display:"flex",alignItems:"center",justifyContent:"center",gap:24}}>
           <button onClick={stop} {...sph} style={{...sps,width:52,height:52,borderRadius:"50%",background:CARD,border:`1px solid ${LINE}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:TXT}}><I.Stop size={20}/></button>
-          <button onClick={playPause} {...pph} style={{...pps,width:78,height:78,borderRadius:"50%",background:cfg.color,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:`0 0 32px ${cfg.color}66`,color:BG}}>
+          <button onClick={()=>{addPlayRipple();playPause();}} {...pph} style={{...pps,width:78,height:78,borderRadius:"50%",background:cfg.color,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:`0 0 32px ${cfg.color}66`,color:BG,position:"relative",overflow:"hidden"}}>
+            {playRipples.map(r=><span key={r} style={{position:"absolute",inset:0,borderRadius:"50%",background:"rgba(255,255,255,0.25)",animation:"ripple 0.55s ease-out forwards"}}/>)}
             {phase==="running"?<I.Pause size={26}/>:<I.Play size={26}/>}
           </button>
           <div style={{width:52,textAlign:"center"}}>
@@ -1332,6 +1360,12 @@ export default function App() {
       @keyframes popIn{0%{transform:scale(0.7) translateY(6px);opacity:0}70%{transform:scale(1.06) translateY(-2px)}100%{transform:scale(1) translateY(0);opacity:1}}
       @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
       @keyframes trophyGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(59,130,246,0.6))}50%{filter:drop-shadow(0 0 24px rgba(59,130,246,0.95))}}
+      @keyframes cdBounce{0%{transform:scale(0.3) rotate(-8deg);opacity:0}55%{transform:scale(1.18) rotate(3deg);opacity:1}75%{transform:scale(0.92) rotate(-1deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
+      @keyframes cdGo{0%{transform:scale(0.5);opacity:0}40%{transform:scale(1.3);opacity:1}65%{transform:scale(0.9)}85%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+      @keyframes ripple{0%{transform:scale(0);opacity:0.5}100%{transform:scale(4);opacity:0}}
+      @keyframes barGrow{from{transform:scaleY(0);opacity:0}to{transform:scaleY(1);opacity:1}}
+      @keyframes statIn{0%{transform:translateX(-14px);opacity:0}100%{transform:translateX(0);opacity:1}}
+      @keyframes goFloat{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-12px) scale(1.1)}60%{transform:translateY(-4px) scale(1.05)}100%{transform:translateY(0) scale(1)}}
     `;
     document.head.appendChild(s);
     return()=>{ document.head.removeChild(s); document.head.removeChild(meta); };
