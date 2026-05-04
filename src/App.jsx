@@ -1215,7 +1215,29 @@ function ActivePage({navigate,workoutId}) {
   const timer=useRef(null);
   const ivRef=useRef(0),woRef=useRef(null);
   const ivStartTs=useRef(null),ivInitDur=useRef(0),wStartTs=useRef(null);
-  const [pph,pps]=usePress(0.93), [sph,sps]=usePress(0.93);
+  const wakeLock=useRef(null);
+
+  // Не давать экрану гаснуть во время тренировки
+  useEffect(()=>{
+    const acquire=async()=>{
+      try{
+        if("wakeLock" in navigator){
+          wakeLock.current=await navigator.wakeLock.request("screen");
+        }
+      }catch(e){}
+    };
+    const release=()=>{ wakeLock.current?.release(); wakeLock.current=null; };
+
+    if(phase==="running"||phase==="countdown"){
+      acquire();
+    } else {
+      release();
+    }
+    // Переактивировать если вкладка снова становится видимой
+    const onVisible=()=>{ if(phase==="running"&&document.visibilityState==="visible") acquire(); };
+    document.addEventListener("visibilitychange",onVisible);
+    return()=>{ release(); document.removeEventListener("visibilitychange",onVisible); };
+  },[phase]);
   const [flash,setFlash]=useState(false);
   const [playRipples,setPlayRipples]=useState([]);
   const [stopConfirm,setStopConfirm]=useState(false);
