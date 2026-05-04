@@ -9,10 +9,32 @@ if (tg) {
   if (tg.requestFullscreen) tg.requestFullscreen();
   if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
 }
+
+// Глобальный запрет случайного сворачивания — перехватываем все вертикальные свайпы вниз
+// которые начались не в скроллируемом элементе
+(function() {
+  let startY = 0, startX = 0;
+  document.addEventListener("touchstart", e => {
+    startY = e.touches[0].clientY;
+    startX = e.touches[0].clientX;
+  }, { passive: true });
+  document.addEventListener("touchmove", e => {
+    const dy = e.touches[0].clientY - startY;
+    const dx = e.touches[0].clientX - startX;
+    // Если движение преимущественно вертикальное вниз — блокируем
+    if (dy > 8 && Math.abs(dy) > Math.abs(dx) * 1.5) {
+      // Разрешаем только если внутри скроллируемого контейнера
+      const el = e.target.closest("[data-scrollable]");
+      if (!el) { e.preventDefault(); return; }
+      // Если скролл уже на верху — тоже блокируем
+      if (el.scrollTop <= 0 && dy > 0) e.preventDefault();
+    }
+  }, { passive: false });
+})();
 const TG_USER = tg?.initDataUnsafe?.user || null;
 
 // CSS переменная которую Telegram выставляет сам — высота его шапки
-const ST  = "calc(var(--tg-content-safe-area-inset-top, 72px) + env(safe-area-inset-top, 0px))";
+const ST  = "calc(var(--tg-content-safe-area-inset-top, 88px) + env(safe-area-inset-top, 0px))";
 const SB  = "calc(env(safe-area-inset-bottom, 0px) + 60px)";
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
@@ -283,7 +305,7 @@ const Loader=()=>(
 );
 
 const Page=({children,style={}})=>(
-  <div style={{minHeight:"100vh",background:BG,color:TXT,paddingTop:ST,paddingBottom:SB,boxSizing:"border-box",...style}}>
+  <div data-scrollable="1" style={{minHeight:"100vh",background:BG,color:TXT,paddingTop:ST,paddingBottom:SB,boxSizing:"border-box",overflowY:"auto",...style}}>
     {children}
   </div>
 );
@@ -328,8 +350,8 @@ function BottomNav({view,setView}) {
     {id:"profile",icon:<I.User size={22}/>,  label:"Профиль"},
   ];
   return (
-    <nav style={{position:"fixed",bottom:0,left:0,right:0,background:"rgba(13,13,15,0.96)",backdropFilter:"blur(20px)",borderTop:`1px solid ${LINE}`,paddingBottom:"env(safe-area-inset-bottom,0px)",zIndex:100}}>
-      <div style={{display:"flex",justifyContent:"space-around",padding:"10px 0 6px"}}>
+    <nav style={{position:"fixed",bottom:0,left:0,right:0,background:"rgba(13,13,15,0.98)",backdropFilter:"blur(20px)",borderTop:`1px solid ${LINE}`,zIndex:100}}>
+      <div style={{display:"flex",justifyContent:"space-around",padding:"10px 0 0"}}>
         {tabs.map(t=>(
           <button key={t.id} onClick={()=>setView(t.id)}
             style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"4px",background:"none",border:"none",cursor:"pointer",color:view===t.id?TXT:MUTED,transition:"color 0.18s"}}>
@@ -339,6 +361,8 @@ function BottomNav({view,setView}) {
           </button>
         ))}
       </div>
+      {/* Закрашиваем зону home indicator — без полоски */}
+      <div style={{height:"env(safe-area-inset-bottom,0px)",background:"rgba(13,13,15,0.98)"}}/>
     </nav>
   );
 }
@@ -361,7 +385,7 @@ function WheelCol({value,max,onChange,renderValue}) {
   };
   return (
     <div style={{position:"relative",flex:1,height:H*5,overflow:"hidden",borderRadius:10}}>
-      <div ref={ref} onScroll={onScroll} style={{height:"100%",overflowY:"scroll",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
+      <div ref={ref} data-scrollable="1" onScroll={onScroll} style={{height:"100%",overflowY:"scroll",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
         <div style={{height:H*2}}/>
         {Array.from({length:max+1},(_,v)=>(
           <div key={v} onClick={()=>{onChange(v);scrollTo(v);}}
@@ -425,9 +449,14 @@ function IvRow({iv,index,onChange,onDelete,dragHandle}) {
 
   return (
     <div style={{position:"relative",marginBottom:8,borderRadius:14,overflow:"hidden"}}>
-      <div style={{position:"absolute",right:0,top:0,bottom:0,width:SLIDE-6,background:"#450a0a",borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:3,opacity:open?1:0,transition:"opacity 0.2s",zIndex:0}}>
-        <button onClick={()=>{setOpen(false);setTx(0);setTimeout(onDelete,150)}} style={{background:"none",border:"none",color:"#fca5a5",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-          <I.Trash size={17}/><span style={{fontSize:9,fontWeight:700}}>УДАЛИТЬ</span>
+      {/* Delete zone */}
+      <div style={{position:"absolute",right:0,top:0,bottom:0,width:SLIDE-6,background:"linear-gradient(135deg,#7f1d1d,#991b1b)",borderRadius:"0 14px 14px 0",display:"flex",alignItems:"center",justifyContent:"center",zIndex:0}}>
+        <button onClick={()=>{setOpen(false);setTx(0);setTimeout(onDelete,150)}}
+          style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"0 14px",opacity:open?1:0,transform:open?"scale(1)":"scale(0.7)",transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)"}}>
+          <div style={{width:34,height:34,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <I.Trash size={16} style={{color:"#fff"}}/>
+          </div>
+          <span style={{fontSize:10,color:"rgba(255,255,255,0.7)",fontWeight:600,letterSpacing:"0.05em"}}>Удалить</span>
         </button>
       </div>
 
@@ -563,8 +592,8 @@ function ProgCard({prog,onStart,added}) {
         </div>
         {/* Play button */}
         <button onClick={e=>{e.stopPropagation();onStart(prog);}}
-          style={{width:42,height:42,borderRadius:"50%",background:BLUE,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#fff",paddingLeft:2}}>
-          <I.Play size={16}/>
+          style={{width:42,height:42,borderRadius:"50%",background:BLUE,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#fff",paddingLeft:3}}>
+          <I.Play size={20} fill="#fff" stroke="none"/>
         </button>
       </div>
 
@@ -608,12 +637,18 @@ function WCard({workout,onStart,onEdit,onDelete}) {
       {!isP&&(
         <div style={{position:"absolute",right:0,top:0,bottom:0,width:SLIDE,display:"flex",borderRadius:"0 16px 16px 0",overflow:"hidden",zIndex:0}}>
           <button onClick={()=>{setOpen(false);setTx(0);setTimeout(onEdit,150)}}
-            style={{flex:1,background:"#1e3a5f",border:"none",color:"#93c5fd",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3}}>
-            <I.Edit size={17}/><span style={{fontSize:9,fontWeight:700}}>ИЗМЕНИТЬ</span>
+            style={{flex:1,background:"linear-gradient(135deg,#1e3a5f,#1d4ed8)",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4}}>
+            <div style={{width:34,height:34,borderRadius:10,background:"rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <I.Edit size={16} style={{color:"#fff"}}/>
+            </div>
+            <span style={{fontSize:10,color:"rgba(255,255,255,0.7)",fontWeight:600,letterSpacing:"0.05em"}}>Изменить</span>
           </button>
           <button onClick={()=>{setOpen(false);setTx(0);setTimeout(onDelete,150)}}
-            style={{flex:1,background:"#450a0a",border:"none",color:"#fca5a5",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3}}>
-            <I.Trash size={17}/><span style={{fontSize:9,fontWeight:700}}>УДАЛИТЬ</span>
+            style={{flex:1,background:"linear-gradient(135deg,#7f1d1d,#991b1b)",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4}}>
+            <div style={{width:34,height:34,borderRadius:10,background:"rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <I.Trash size={16} style={{color:"#fff"}}/>
+            </div>
+            <span style={{fontSize:10,color:"rgba(255,255,255,0.7)",fontWeight:600,letterSpacing:"0.05em"}}>Удалить</span>
           </button>
         </div>
       )}
@@ -633,8 +668,8 @@ function WCard({workout,onStart,onEdit,onDelete}) {
           <IvBar intervals={ivs} h={3}/>
         </div>
         <button onClick={()=>{if(!open)onStart();}}
-          style={{width:42,height:42,borderRadius:"50%",background:BLUE,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#fff",paddingLeft:2}}>
-          <I.Play size={16}/>
+          style={{width:42,height:42,borderRadius:"50%",background:BLUE,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#fff",paddingLeft:3}}>
+          <I.Play size={20} fill="#fff" stroke="none"/>
         </button>
       </div>
     </div>
@@ -662,9 +697,13 @@ function HCard({result,onClick,onDelete}) {
 
   return (
     <div style={{position:"relative",marginBottom:8,borderRadius:14,overflow:"hidden"}}>
-      <div style={{position:"absolute",right:0,top:0,bottom:0,width:SLIDE-6,background:"#450a0a",borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:2,opacity:open?1:0,transition:"opacity 0.2s",zIndex:0}}>
-        <button onClick={()=>{setOpen(false);setTx(0);setTimeout(onDelete,150)}} style={{background:"none",border:"none",color:"#fca5a5",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-          <I.Trash size={17}/><span style={{fontSize:9,fontWeight:700}}>УДАЛИТЬ</span>
+      <div style={{position:"absolute",right:0,top:0,bottom:0,width:SLIDE,background:"linear-gradient(135deg,#7f1d1d,#991b1b)",borderRadius:"0 14px 14px 0",display:"flex",alignItems:"center",justifyContent:"center",zIndex:0}}>
+        <button onClick={()=>{setOpen(false);setTx(0);setTimeout(onDelete,150)}}
+          style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"0 14px",opacity:open?1:0,transform:open?"scale(1)":"scale(0.7)",transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)"}}>
+          <div style={{width:34,height:34,borderRadius:10,background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <I.Trash size={16} style={{color:"#fff"}}/>
+          </div>
+          <span style={{fontSize:10,color:"rgba(255,255,255,0.7)",fontWeight:600,letterSpacing:"0.05em"}}>Удалить</span>
         </button>
       </div>
       <div {...ph} onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={onTE} onClick={()=>!open&&onClick()}
@@ -1239,6 +1278,8 @@ function ActivePage({navigate,workoutId}) {
   const isWarn=tLeft<=5&&phase==="running";
   const R=118, circ=2*Math.PI*R;
   const prog=curr.d>0?tLeft/curr.d:0;
+  // При смене интервала (flash) убираем transition чтобы кольцо сразу стало полным
+  const ringTransition=flash?"none":"stroke-dashoffset 0.95s linear,stroke 0.3s";
 
   return (
     <div style={{height:"100vh",background:BG,color:TXT,display:"flex",flexDirection:"column",paddingTop:ST,boxSizing:"border-box",overflow:"hidden"}}>
@@ -1273,7 +1314,7 @@ function ActivePage({navigate,workoutId}) {
                   <circle cx={130} cy={130} r={R} fill="none" stroke={CARD2} strokeWidth={16}/>
                   <circle cx={130} cy={130} r={R} fill="none" stroke={isWarn?"#ef4444":cfg.color} strokeWidth={16} strokeLinecap="round"
                     strokeDasharray={circ} strokeDashoffset={circ*(1-prog)}
-                    style={{transition:"stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1),stroke 0.4s",filter:`drop-shadow(0 0 16px ${isWarn?"rgba(239,68,68,0.7)":cfg.color+"88"})`}}/>
+                    style={{transition:ringTransition,filter:`drop-shadow(0 0 16px ${isWarn?"rgba(239,68,68,0.7)":cfg.color+"88"})`}}/>
                 </svg>
               </div>
               <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
