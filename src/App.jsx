@@ -1216,6 +1216,7 @@ function ActivePage({navigate,workoutId}) {
   const ivRef=useRef(0),woRef=useRef(null);
   const ivStartTs=useRef(null),ivInitDur=useRef(0),wStartTs=useRef(null);
   const wakeLock=useRef(null);
+  const [pph,pps]=usePress(0.93), [sph,sps]=usePress(0.93);
 
   // Не давать экрану гаснуть во время тренировки
   useEffect(()=>{
