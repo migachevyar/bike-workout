@@ -1320,117 +1320,136 @@ function ActivePage({navigate,workoutId}) {
 
       {/* Confirm stop modal */}
       {stopConfirm&&createPortal(
-        <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"center",justifyContent:"center",padding:"0 24px"}}>
-          <div style={{background:CARD,borderRadius:20,padding:"28px 24px",width:"100%",maxWidth:320,animation:"popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both"}}>
-            <div style={{fontSize:18,fontWeight:700,marginBottom:8,textAlign:"center"}}>Остановить тренировку?</div>
-            <div style={{fontSize:14,color:SUB,textAlign:"center",marginBottom:24,lineHeight:1.5}}>Прогресс будет сохранён в историю</div>
+        <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.82)",display:"flex",alignItems:"center",justifyContent:"center",padding:"0 24px"}}>
+          <div style={{background:CARD,borderRadius:22,padding:"28px 22px",width:"100%",maxWidth:320,animation:"popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both"}}>
+            <div style={{fontSize:20,fontWeight:700,marginBottom:10,textAlign:"center"}}>Остановить?</div>
+            <div style={{fontSize:14,color:SUB,textAlign:"center",marginBottom:22,lineHeight:1.5}}>Прогресс будет сохранён</div>
             <div style={{display:"flex",gap:10}}>
-              <button onClick={()=>setStopConfirm(false)}
-                style={{flex:1,background:CARD2,border:`1px solid ${LINE}`,borderRadius:12,padding:"13px",color:TXT,fontSize:14,fontWeight:600,cursor:"pointer"}}>
-                Продолжить
-              </button>
-              <button onClick={()=>{setStopConfirm(false);confirmStop();}}
-                style={{flex:1,background:"linear-gradient(135deg,#7f1d1d,#dc2626)",border:"none",borderRadius:12,padding:"13px",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>
-                Остановить
-              </button>
+              <button onClick={()=>setStopConfirm(false)} style={{flex:1,background:CARD2,border:`1px solid ${LINE}`,borderRadius:12,padding:"14px",color:TXT,fontSize:15,fontWeight:600,cursor:"pointer"}}>Продолжить</button>
+              <button onClick={()=>{setStopConfirm(false);confirmStop();}} style={{flex:1,background:"linear-gradient(135deg,#7f1d1d,#dc2626)",border:"none",borderRadius:12,padding:"14px",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer"}}>Остановить</button>
             </div>
           </div>
         </div>,
         document.body
       )}
 
-      {/* Header — компактный */}
-      <div style={{padding:"4px 16px 0",flexShrink:0}}>
-        <div style={{fontSize:13,fontWeight:600}}>{workout.name}</div>
-        <div style={{fontSize:10,color:SUB,marginTop:1}}>Интервал {ivIdx+1} из {workout.intervals.length}</div>
+      {/* ── Header: назад (только до старта) + название ── */}
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"6px 14px 4px",flexShrink:0}}>
+        {phase==="ready"
+          ? <button onClick={()=>navigate("home")} style={{width:36,height:36,borderRadius:"50%",background:CARD2,border:`1px solid ${LINE}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+              <I.Back size={16}/>
+            </button>
+          : <div style={{width:36,flexShrink:0}}/>
+        }
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:15,fontWeight:700,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{workout.name}</div>
+          <div style={{fontSize:12,color:SUB}}>Интервал {ivIdx+1} из {workout.intervals.length}</div>
+        </div>
       </div>
-      <div style={{margin:"4px 16px 0",height:2,background:CARD2,borderRadius:2,flexShrink:0,overflow:"hidden"}}>
+
+      {/* ── Progress bar ── */}
+      <div style={{margin:"0 14px 0",height:3,background:CARD2,borderRadius:2,flexShrink:0,overflow:"hidden"}}>
         <div style={{height:"100%",width:`${(ivIdx/workout.intervals.length)*100}%`,background:BLUE,borderRadius:2,transition:"width 0.6s ease"}}/>
       </div>
 
-      {/* Timer area — всё центровано по вертикали */}
-      <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 16px",minHeight:0,overflow:"hidden"}}>
-        {phase==="countdown"
-          ?<div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6}}>
-            <div style={{fontSize:11,color:SUB,letterSpacing:"0.14em",animation:"fadeIn 0.3s ease"}}>ПРИГОТОВЬТЕСЬ</div>
-            <div key={cd} style={{fontSize:120,fontWeight:100,lineHeight:1,color:cd>0?BLUE:"#4ade80",animation:cd>0?"cdBounce 0.45s cubic-bezier(0.34,1.56,0.64,1) both":"cdGo 0.5s cubic-bezier(0.34,1.56,0.64,1) both",display:"inline-block"}}>{cd||"GO!"}</div>
-          </div>
-          :<div style={{display:"flex",flexDirection:"column",alignItems:"center",width:"100%",gap:6}}>
-            {/* Ring */}
-            <div style={{position:"relative",width:244,height:244,flexShrink:0,animation:flash?"ivFlash 0.35s ease":"none"}}>
-              {flash&&<div style={{position:"absolute",inset:-8,borderRadius:"50%",background:cfg.color+"28",animation:"scaleIn 0.35s ease",pointerEvents:"none",zIndex:2}}/>}
+      {/* ── Countdown экран ── */}
+      {phase==="countdown" && (
+        <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+          <div style={{fontSize:13,color:SUB,letterSpacing:"0.14em",marginBottom:8,animation:"fadeIn 0.3s ease"}}>ПРИГОТОВЬТЕСЬ</div>
+          <div key={cd} style={{fontSize:130,fontWeight:100,lineHeight:1,color:cd>0?BLUE:"#4ade80",animation:cd>0?"cdBounce 0.45s cubic-bezier(0.34,1.56,0.64,1) both":"cdGo 0.5s cubic-bezier(0.34,1.56,0.64,1) both",display:"inline-block"}}>{cd||"GO!"}</div>
+        </div>
+      )}
+
+      {/* ── Workout экран: ring прибит к верху ── */}
+      {phase!=="countdown" && (
+        <>
+          {/* Ring */}
+          <div style={{display:"flex",justifyContent:"center",paddingTop:10,flexShrink:0}}>
+            <div style={{position:"relative",width:256,height:256,animation:flash?"ivFlash 0.3s ease":"none"}}>
               <div style={{animation:isWarn?"pulseWarn 0.8s ease-in-out infinite":"none",width:"100%",height:"100%"}}>
-                <svg width={244} height={244} style={{transform:"rotate(-90deg)"}}>
-                  <circle cx={122} cy={122} r={R} fill="none" stroke={CARD2} strokeWidth={15}/>
-                  <circle cx={122} cy={122} r={R} fill="none" stroke={isWarn?"#ef4444":cfg.color} strokeWidth={15} strokeLinecap="round"
+                <svg width={256} height={256} style={{transform:"rotate(-90deg)"}}>
+                  <circle cx={128} cy={128} r={R} fill="none" stroke={CARD2} strokeWidth={16}/>
+                  <circle cx={128} cy={128} r={R} fill="none" stroke={isWarn?"#ef4444":cfg.color} strokeWidth={16} strokeLinecap="round"
                     strokeDasharray={circ} strokeDashoffset={circ*(1-prog)}
-                    style={{transition:ringTransition,filter:`drop-shadow(0 0 12px ${isWarn?"rgba(239,68,68,0.65)":cfg.color+"80"})`}}/>
+                    style={{transition:ringTransition,filter:`drop-shadow(0 0 16px ${isWarn?"rgba(239,68,68,0.7)":cfg.color+"90"})`}}/>
                 </svg>
               </div>
-              <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-                <div style={{fontSize:22,marginBottom:2}}>{cfg.emoji}</div>
-                <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:isWarn?"#ef4444":cfg.color,marginBottom:4}}>{cfg.label}</div>
-                <div style={{fontSize:56,fontWeight:100,fontVariantNumeric:"tabular-nums",lineHeight:1,letterSpacing:"-0.03em"}}>{fmtT(tLeft)}</div>
+              <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2}}>
+                <div style={{fontSize:26}}>{cfg.emoji}</div>
+                <div style={{fontSize:13,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:isWarn?"#ef4444":cfg.color}}>{cfg.label}</div>
+                <div style={{fontSize:64,fontWeight:100,fontVariantNumeric:"tabular-nums",lineHeight:1,letterSpacing:"-0.02em"}}>{fmtT(tLeft)}</div>
               </div>
             </div>
+          </div>
 
-            {/* Stats row */}
-            <div style={{display:"flex",gap:6,width:"100%",maxWidth:244}}>
-              {[
-                {l:"ПРОШЛО",   v:fmtT(elapsed), a:false},
-                {l:"ИНТЕРВАЛ", v:`${ivIdx+1}/${workout.intervals.length}`, a:true},
-                {l:"ОСТАЛОСЬ", v:fmtT(Math.max(0,workout.intervals.slice(ivIdx).reduce((s,i)=>s+i.d,0)-ivInitDur.current+tLeft)), a:false},
-              ].map((s,i)=>(
-                <div key={i} style={{flex:1,background:s.a?cfg.color+"12":CARD,border:s.a?`1px solid ${cfg.color}30`:`1px solid ${LINE}`,borderRadius:10,padding:"6px 4px",textAlign:"center"}}>
-                  <div style={{fontSize:9,color:MUTED,letterSpacing:"0.07em",marginBottom:2}}>{s.l}</div>
-                  <div style={{fontSize:13,fontWeight:500,color:s.a?cfg.color:TXT,fontVariantNumeric:"tabular-nums"}}>{s.v}</div>
-                </div>
-              ))}
-            </div>
+          {/* Stats row */}
+          <div style={{display:"flex",gap:8,margin:"10px 14px 0",flexShrink:0}}>
+            {[
+              {l:"ПРОШЛО",   v:fmtT(elapsed), a:false},
+              {l:"ИНТЕРВАЛ", v:`${ivIdx+1}/${workout.intervals.length}`, a:true},
+              {l:"ОСТАЛОСЬ", v:fmtT(Math.max(0,workout.intervals.slice(ivIdx).reduce((s,i)=>s+i.d,0)-ivInitDur.current+tLeft)), a:false},
+            ].map((s,i)=>(
+              <div key={i} style={{flex:1,background:s.a?cfg.color+"14":CARD,border:s.a?`1px solid ${cfg.color}44`:`1px solid ${LINE}`,borderRadius:12,padding:"9px 6px",textAlign:"center"}}>
+                <div style={{fontSize:10,color:MUTED,letterSpacing:"0.08em",marginBottom:4}}>{s.l}</div>
+                <div style={{fontSize:16,fontWeight:600,color:s.a?cfg.color:TXT,fontVariantNumeric:"tabular-nums"}}>{s.v}</div>
+              </div>
+            ))}
+          </div>
 
-            {/* Next / pause */}
-            <div style={{height:24,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-              {phase==="paused"
-                ?<div style={{fontSize:12,color:SUB,letterSpacing:"0.08em"}}>⏸ ПАУЗА</div>
-                :next
-                  ?<div style={{textAlign:"center"}}>
-                    <div style={{fontSize:9,color:MUTED,marginBottom:1,letterSpacing:"0.08em"}}>СЛЕДУЮЩИЙ</div>
-                    <div style={{fontSize:12,color:nc?.color,fontWeight:600}}>{nc?.emoji} {nc?.label} — {fmtT(next.d)}</div>
+          {/* Next interval / pause */}
+          <div style={{margin:"10px 14px 0",height:36,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            {phase==="paused"
+              ? <div style={{fontSize:16,color:SUB,fontWeight:500}}>⏸ Пауза</div>
+              : next
+                ? <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:11,color:MUTED,letterSpacing:"0.1em",marginBottom:3}}>СЛЕДУЮЩИЙ</div>
+                    <div style={{fontSize:16,color:nc?.color,fontWeight:700}}>{nc?.emoji} {nc?.label} — {fmtT(next.d)}</div>
                   </div>
-                  :<div style={{fontSize:12,color:"#4ade80",fontWeight:600}}>🏁 Финиш!</div>
-              }
-            </div>
-
-            {/* Progress dots */}
-            <div style={{display:"flex",gap:3,alignItems:"center",flexWrap:"wrap",justifyContent:"center",maxWidth:220}}>
-              {workout.intervals.map((_,i)=>(
-                <div key={i} style={{height:3,width:i===ivIdx?12:i<ivIdx?6:4,borderRadius:2,background:i<ivIdx?IV[workout.intervals[i].t]?.color||"#4ade80":i===ivIdx?"#fff":MUTED,transition:"all 0.3s"}}/>
-              ))}
-            </div>
-          </div>
-        }
-      </div>
-
-      {/* Controls */}
-      {phase!=="countdown"&&(
-        <div style={{flexShrink:0,padding:"8px 24px",paddingBottom:"max(20px,env(safe-area-inset-bottom,20px))",display:"flex",alignItems:"center",justifyContent:"center",gap:28}}>
-          <button onClick={stop} {...sph} style={{...sps,width:54,height:54,borderRadius:"50%",background:CARD,border:`1px solid ${LINE}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,cursor:"pointer"}}>
-            <I.Stop size={18} fill={TXT} stroke="none"/>
-            <span style={{fontSize:9,color:MUTED,letterSpacing:"0.07em"}}>СТОП</span>
-          </button>
-          <button onClick={()=>{addPlayRipple();playPause();}} {...pph} style={{...pps,width:80,height:80,borderRadius:"50%",background:cfg.color,border:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,cursor:"pointer",boxShadow:`0 0 28px ${cfg.color}55`,position:"relative",overflow:"hidden"}}>
-            {playRipples.map(r=><span key={r} style={{position:"absolute",inset:0,borderRadius:"50%",background:"rgba(255,255,255,0.25)",animation:"ripple 0.55s ease-out forwards"}}/>)}
-            {phase==="running"
-              ?<I.Pause size={24} fill={BG} stroke={BG}/>
-              :<BigPlay size={26} color={BG}/>
+                : <div style={{fontSize:16,color:"#4ade80",fontWeight:700}}>🏁 Финиш!</div>
             }
-            <span style={{fontSize:9,letterSpacing:"0.08em",fontWeight:700,color:BG}}>{phase==="running"?"ПАУЗА":"СТАРТ"}</span>
-          </button>
-          <div style={{width:54,height:54,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2}}>
-            <div style={{fontSize:24}}>{cfg.emoji}</div>
-            <span style={{fontSize:9,color:MUTED,letterSpacing:"0.07em"}}>ТЕМП</span>
           </div>
-        </div>
+
+          {/* Цветные полосы интервалов */}
+          <div style={{margin:"10px 14px 0",flexShrink:0}}>
+            <IvBar intervals={workout.intervals.map((iv,i)=>({
+              t:iv.t, d:iv.d,
+              opacity: i<ivIdx?0.35:1
+            }))} h={6}/>
+            {/* Маркер текущего интервала */}
+            <div style={{position:"relative",height:8,marginTop:2}}>
+              {(()=>{
+                const total=workout.intervals.reduce((s,iv)=>s+iv.d,0);
+                const passed=workout.intervals.slice(0,ivIdx).reduce((s,iv)=>s+iv.d,0);
+                const currDone=curr.d-tLeft;
+                const pct=((passed+currDone)/total)*100;
+                return <div style={{position:"absolute",left:`${Math.min(pct,99)}%`,top:0,width:3,height:8,background:"#fff",borderRadius:2,transform:"translateX(-50%)",boxShadow:"0 0 6px rgba(255,255,255,0.8)"}}/>;
+              })()}
+            </div>
+          </div>
+
+          {/* Spacer */}
+          <div style={{flex:1,minHeight:4}}/>
+
+          {/* Controls */}
+          <div style={{flexShrink:0,padding:"0 20px",paddingBottom:"max(24px,env(safe-area-inset-bottom,24px))",display:"flex",alignItems:"center",justifyContent:"center",gap:24}}>
+            <button onClick={stop} {...sph} style={{...sps,width:60,height:60,borderRadius:"50%",background:CARD,border:`1px solid ${LINE}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,cursor:"pointer"}}>
+              <I.Stop size={20} fill={TXT} stroke="none"/>
+              <span style={{fontSize:11,color:MUTED,fontWeight:600,letterSpacing:"0.04em"}}>СТОП</span>
+            </button>
+            <button onClick={()=>{addPlayRipple();playPause();}} {...pph} style={{...pps,width:84,height:84,borderRadius:"50%",background:cfg.color,border:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,cursor:"pointer",boxShadow:`0 0 32px ${cfg.color}60`,position:"relative",overflow:"hidden"}}>
+              {playRipples.map(r=><span key={r} style={{position:"absolute",inset:0,borderRadius:"50%",background:"rgba(255,255,255,0.25)",animation:"ripple 0.55s ease-out forwards"}}/>)}
+              {phase==="running"
+                ? <I.Pause size={26} fill={BG} stroke={BG}/>
+                : <BigPlay size={28} color={BG}/>
+              }
+              <span style={{fontSize:11,letterSpacing:"0.06em",fontWeight:700,color:BG}}>{phase==="running"?"ПАУЗА":"СТАРТ"}</span>
+            </button>
+            <div style={{width:60,height:60,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3}}>
+              <div style={{fontSize:28}}>{cfg.emoji}</div>
+              <span style={{fontSize:11,color:MUTED,fontWeight:600,letterSpacing:"0.04em"}}>ТЕМП</span>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
