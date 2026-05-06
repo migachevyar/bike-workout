@@ -1454,8 +1454,8 @@ function ActivePage({navigate,workoutId}) {
           {moodSheet&&<MoodSheet current={mood} onSelect={v=>{setMood(v);moodRef.current=v;haptic('light');}} onClose={()=>setMoodSheet(false)}/>}
           <div style={{flexShrink:0,padding:"0 16px",paddingBottom:"max(28px,env(safe-area-inset-bottom,28px))",display:"flex",alignItems:"center",justifyContent:"center",gap:20}}>
             {/* СТОП */}
-            <button onClick={stop} {...sph} style={{...sps,width:64,height:64,borderRadius:"50%",background:CARD,border:`1px solid ${LINE}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,cursor:"pointer"}}>
-              <I.Stop size={22} fill={TXT} stroke="none"/>
+            <button onClick={stop} {...sph} style={{...sps,width:76,height:56,borderRadius:28,background:CARD,border:`1px solid ${LINE}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,cursor:"pointer"}}>
+              <I.Stop size={20} fill={TXT} stroke="none"/>
               <span style={{fontSize:11,color:MUTED,fontWeight:600,letterSpacing:"0.04em"}}>СТОП</span>
             </button>
             {/* СТАРТ / ПАУЗА */}
@@ -1473,9 +1473,9 @@ function ActivePage({navigate,workoutId}) {
               <span style={{fontSize:11,letterSpacing:"0.06em",fontWeight:700,color:phase==="running"?TXT:"#fff"}}>{phase==="running"?"ПАУЗА":"СТАРТ"}</span>
             </button>
             {/* САМОЧУВСТВИЕ */}
-            <button onClick={()=>setMoodSheet(true)} {...sph} style={{...sps,width:64,height:64,borderRadius:"50%",background:mood?BLUE+"22":CARD,border:`1px solid ${mood?BLUE:LINE}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,cursor:"pointer"}}>
-              <span style={{fontSize:mood?28:22}}>{mood?MOODS.find(m=>m.v===mood)?.e:"🙂"}</span>
-              <span style={{fontSize:10,color:mood?BLUE:MUTED,fontWeight:600}}>НАСТРОЙ</span>
+            <button onClick={()=>setMoodSheet(true)} {...sph} style={{...sps,width:76,height:56,borderRadius:28,background:mood?BLUE+"22":CARD,border:`1px solid ${mood?BLUE:LINE}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,cursor:"pointer"}}>
+              <span style={{fontSize:mood?24:20,lineHeight:1}}>{mood?MOODS.find(m=>m.v===mood)?.e:"😊"}</span>
+              <span style={{fontSize:11,color:mood?BLUE:MUTED,fontWeight:600,letterSpacing:"0.02em"}}>НАСТРОЙ</span>
             </button>
           </div>
         </>
