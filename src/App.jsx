@@ -228,7 +228,7 @@ const I={
   Edit:   p=><Svg {...p}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></Svg>,
   User:   p=><Svg {...p}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></Svg>,
   Play:   p=><svg width={p.size||20} height={p.size||20} viewBox="0 0 24 24" style={p.style}><path d="M6 4.8C6 3.7 7.2 3 8.1 3.6L20.1 10.8C21 11.4 21 12.6 20.1 13.2L8.1 20.4C7.2 21 6 20.3 6 19.2V4.8Z" fill={p.fill||"currentColor"} stroke="none"/></svg>,
-  Pause:  p=><svg width={p.size||20} height={p.size||20} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
+  Pause:  p=><Svg {...p}><rect x="6" y="4" width="4" height="16" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" fill="currentColor" stroke="none"/></Svg>,
   Stop:   p=><svg width={p.size||20} height={p.size||20} viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>,
   Check:  p=><Svg {...p}><path d="M20 6 9 17l-5-5"/></Svg>,
   Clock:  p=><Svg {...p}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></Svg>,
@@ -1305,11 +1305,11 @@ function ActivePage({navigate,workoutId}) {
   if(!workout) return <Loader/>;
   const curr=workout.intervals[ivIdx], next=workout.intervals[ivIdx+1];
   const cfg=IV[curr.t]||IV.slow, nc=next?IV[next.t]:null;
-  const R=116, circ=2*Math.PI*R;
-  // Прогресс: убывает от 1 до 0 — кольцо уменьшается
+  const isWarn=tLeft<=5&&phase==="running";
+  const R=131, circ=2*Math.PI*R;
   const prog=curr.d>0?tLeft/curr.d:0;
-  // При смене интервала (flash) — моментально полное, без анимации заполнения
-  const ringTransition=flash?"none":"stroke-dashoffset 0.55s linear,stroke 0.3s";
+  // transition короче тика (250ms) — плавное убывание без рывков
+  const ringTransition=flash?"none":"stroke-dashoffset 0.22s linear,stroke 0.3s";
 
   return (
     <div style={{height:"100vh",background:BG,color:TXT,display:"flex",flexDirection:"column",paddingTop:ST,boxSizing:"border-box",overflow:"hidden"}}>
@@ -1356,33 +1356,33 @@ function ActivePage({navigate,workoutId}) {
       {/* ── Workout экран ── */}
       {phase!=="countdown" && (
         <>
-          {/* Ring — без тряски, transition только убывает */}
-          <div style={{display:"flex",justifyContent:"center",paddingTop:10,flexShrink:0}}>
-            <div style={{position:"relative",width:256,height:256,animation:flash?"ivFlash 0.3s ease":"none"}}>
-              <svg width={256} height={256} style={{transform:"rotate(-90deg)"}}>
-                <circle cx={128} cy={128} r={R} fill="none" stroke={CARD2} strokeWidth={16}/>
-                <circle cx={128} cy={128} r={R} fill="none" stroke={cfg.color} strokeWidth={16} strokeLinecap="round"
+          {/* Ring */}
+          <div style={{display:"flex",justifyContent:"center",paddingTop:8,flexShrink:0}}>
+            <div style={{position:"relative",width:290,height:290,animation:flash?"ivFlash 0.3s ease":"none"}}>
+              <svg width={290} height={290} style={{transform:"rotate(-90deg)"}}>
+                <circle cx={145} cy={145} r={R} fill="none" stroke={CARD2} strokeWidth={16}/>
+                <circle cx={145} cy={145} r={R} fill="none" stroke={isWarn?"#ef4444":cfg.color} strokeWidth={16} strokeLinecap="round"
                   strokeDasharray={circ} strokeDashoffset={circ*(1-prog)}
-                  style={{transition:ringTransition,filter:`drop-shadow(0 0 16px ${cfg.color}80)`}}/>
+                  style={{transition:ringTransition,filter:`drop-shadow(0 0 16px ${isWarn?"rgba(239,68,68,0.75)":cfg.color+"80"})`}}/>
               </svg>
               <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2}}>
-                <div style={{fontSize:26}}>{cfg.emoji}</div>
-                <div style={{fontSize:13,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:cfg.color}}>{cfg.label}</div>
-                <div style={{fontSize:64,fontWeight:100,fontVariantNumeric:"tabular-nums",lineHeight:1,letterSpacing:"-0.02em"}}>{fmtT(tLeft)}</div>
+                <div style={{fontSize:28}}>{cfg.emoji}</div>
+                <div style={{fontSize:13,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:isWarn?"#ef4444":cfg.color}}>{cfg.label}</div>
+                <div style={{fontSize:68,fontWeight:100,fontVariantNumeric:"tabular-nums",lineHeight:1,letterSpacing:"-0.02em"}}>{fmtT(tLeft)}</div>
               </div>
             </div>
           </div>
 
           {/* Stats row */}
-          <div style={{display:"flex",gap:8,margin:"10px 14px 0",flexShrink:0}}>
+          <div style={{display:"flex",gap:8,margin:"8px 14px 0",flexShrink:0}}>
             {[
               {l:"ПРОШЛО",   v:fmtT(elapsed), a:false},
               {l:"ИНТЕРВАЛ", v:`${ivIdx+1}/${workout.intervals.length}`, a:true},
               {l:"ОСТАЛОСЬ", v:fmtT(Math.max(0,workout.intervals.slice(ivIdx).reduce((s,i)=>s+i.d,0)-ivInitDur.current+tLeft)), a:false},
             ].map((s,i)=>(
-              <div key={i} style={{flex:1,background:s.a?cfg.color+"14":CARD,border:s.a?`1px solid ${cfg.color}44`:`1px solid ${LINE}`,borderRadius:12,padding:"9px 6px",textAlign:"center"}}>
+              <div key={i} style={{flex:1,background:s.a?(isWarn?"#ef4444":cfg.color)+"14":CARD,border:s.a?`1px solid ${(isWarn?"#ef4444":cfg.color)}44`:`1px solid ${LINE}`,borderRadius:12,padding:"9px 6px",textAlign:"center"}}>
                 <div style={{fontSize:10,color:MUTED,letterSpacing:"0.08em",marginBottom:4}}>{s.l}</div>
-                <div style={{fontSize:16,fontWeight:600,color:s.a?cfg.color:TXT,fontVariantNumeric:"tabular-nums"}}>{s.v}</div>
+                <div style={{fontSize:16,fontWeight:600,color:s.a?(isWarn?"#ef4444":cfg.color):TXT,fontVariantNumeric:"tabular-nums"}}>{s.v}</div>
               </div>
             ))}
           </div>
@@ -1400,9 +1400,9 @@ function ActivePage({navigate,workoutId}) {
             }
           </div>
 
-          {/* Цветные полосы — без маркера */}
-          <div style={{margin:"6px 14px 0",flexShrink:0}}>
-            <IvBar intervals={workout.intervals.map((iv,i)=>({t:iv.t,d:iv.d}))} h={6}/>
+          {/* Цветные полосы — больше отступ */}
+          <div style={{margin:"14px 14px 0",flexShrink:0}}>
+            <IvBar intervals={workout.intervals.map(iv=>({t:iv.t,d:iv.d}))} h={6}/>
           </div>
 
           {/* Spacer */}
