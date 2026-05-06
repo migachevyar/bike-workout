@@ -228,7 +228,7 @@ const I={
   Edit:   p=><Svg {...p}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></Svg>,
   User:   p=><Svg {...p}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></Svg>,
   Play:   p=><svg width={p.size||20} height={p.size||20} viewBox="0 0 24 24" style={p.style}><path d="M6 4.8C6 3.7 7.2 3 8.1 3.6L20.1 10.8C21 11.4 21 12.6 20.1 13.2L8.1 20.4C7.2 21 6 20.3 6 19.2V4.8Z" fill={p.fill||"currentColor"} stroke="none"/></svg>,
-  Pause:  p=><Svg {...p}><rect x="6" y="4" width="4" height="16" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" fill="currentColor" stroke="none"/></Svg>,
+  Pause:  ({size=20,fill="#fff",style})=><svg width={size} height={size} viewBox="0 0 24 24" style={style}><rect x="6" y="4" width="4" height="16" rx="1.5" fill={fill}/><rect x="14" y="4" width="4" height="16" rx="1.5" fill={fill}/></svg>,
   Stop:   p=><svg width={p.size||20} height={p.size||20} viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>,
   Check:  p=><Svg {...p}><path d="M20 6 9 17l-5-5"/></Svg>,
   Clock:  p=><Svg {...p}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></Svg>,
@@ -813,6 +813,7 @@ function HomeView({navigate}) {
 function StatsView({navigate}) {
   const [history,setH]=useState([]);
   const [loading,setLoad]=useState(true);
+  const [expanded,setExpanded]=useState(false);
 
   useEffect(()=>{(async()=>{ const rs=await db.getR(); setH([...rs].sort((a,b)=>new Date(b.completedAt)-new Date(a.completedAt))); setLoad(false); })();},[]);
 
@@ -886,9 +887,16 @@ function StatsView({navigate}) {
         {history.length>0&&(
           <>
             <div style={{fontSize:18,fontWeight:700,marginBottom:12,animation:"fadeIn 0.4s ease both"}}>Последние тренировки</div>
-            {history.map((r,i)=>(
+            {(expanded?history:history.slice(0,3)).map((r,i)=>(
               <HCard key={r.id} result={r} onClick={()=>navigate("details",r.id)} onDelete={()=>delR(r.id)}/>
             ))}
+            {history.length>3&&(
+              <button onClick={()=>setExpanded(e=>!e)}
+                style={{width:"100%",background:CARD,border:`1px solid ${LINE}`,borderRadius:14,padding:"13px",color:SUB,fontSize:14,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:4,marginBottom:8}}>
+                <span style={{fontSize:16}}>{expanded?"▲":"▼"}</span>
+                {expanded?`Скрыть`:`Показать ещё ${history.length-3}`}
+              </button>
+            )}
           </>
         )}
 
@@ -1204,6 +1212,38 @@ function CreatePage({navigate,editId}) {
 }
 
 // ─── ACTIVE WORKOUT ───────────────────────────────────────────────────────────
+// ─── MOOD SHEET ───────────────────────────────────────────────────────────────
+const MOODS=[
+  {v:"great",e:"😁",l:"Отлично"},
+  {v:"good", e:"🙂",l:"Хорошо"},
+  {v:"ok",   e:"😐",l:"Нормально"},
+  {v:"bad",  e:"😕",l:"Плохо"},
+  {v:"awful",e:"😫",l:"Ужасно"},
+];
+function MoodSheet({current,onSelect,onClose}) {
+  return createPortal(
+    <div style={{position:"fixed",inset:0,zIndex:9998,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"flex-end"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:CARD,borderRadius:"22px 22px 0 0",padding:"20px 20px",paddingBottom:"max(32px,env(safe-area-inset-bottom,32px))",animation:"slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1) both"}}>
+        <div style={{width:36,height:4,background:MUTED,borderRadius:2,margin:"0 auto 18px"}}/>
+        <div style={{fontSize:16,fontWeight:700,textAlign:"center",marginBottom:4}}>Как самочувствие?</div>
+        <div style={{fontSize:13,color:SUB,textAlign:"center",marginBottom:20}}>Оцени тренировку прямо сейчас</div>
+        <div style={{display:"flex",justifyContent:"space-around"}}>
+          {MOODS.map(m=>(
+            <button key={m.v} onClick={()=>{onSelect(m.v);onClose();}}
+              style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,cursor:"pointer",padding:"10px 8px",borderRadius:14,border:"none",
+                background:current===m.v?BLUE+"22":"transparent",
+                outline:current===m.v?`2px solid ${BLUE}`:"2px solid transparent",transition:"all 0.15s"}}>
+              <span style={{fontSize:36,lineHeight:1}}>{m.e}</span>
+              <span style={{fontSize:11,color:current===m.v?BLUE:SUB,fontWeight:current===m.v?700:400}}>{m.l}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 function ActivePage({navigate,workoutId}) {
   const [workout,setWO]=useState(null);
   const [phase,setPhase]=useState("ready");
@@ -1212,7 +1252,7 @@ function ActivePage({navigate,workoutId}) {
   const [tLeft,setTL]=useState(0);
   const [elapsed,setEl]=useState(0);
   const timer=useRef(null);
-  const ivRef=useRef(0),woRef=useRef(null);
+  const ivRef=useRef(0),woRef=useRef(null),moodRef=useRef(null);
   const ivStartTs=useRef(null),ivInitDur=useRef(0),wStartTs=useRef(null);
   const wakeLock=useRef(null);
   const [pph,pps]=usePress(0.93), [sph,sps]=usePress(0.93);
@@ -1241,13 +1281,15 @@ function ActivePage({navigate,workoutId}) {
   const [flash,setFlash]=useState(false);
   const [playRipples,setPlayRipples]=useState([]);
   const [stopConfirm,setStopConfirm]=useState(false);
+  const [mood,setMood]=useState(null);
+  const [moodSheet,setMoodSheet]=useState(false);
   const addPlayRipple=()=>{const id=Date.now();setPlayRipples(r=>[...r,id]);setTimeout(()=>setPlayRipples(r=>r.filter(x=>x!==id)),600);};
 
   const confirmStop=()=>{
     haptic('light');
     clearInterval(timer.current);clearTimer();
     if(phase==="ready"||phase==="countdown"){navigate("home");return;}
-    const r={id:uid(),workoutId:woRef.current.id,workoutName:woRef.current.name,totalDuration:elapsed,completedIntervals:ivRef.current,totalIntervals:woRef.current.intervals.length,completedAt:new Date()};
+    const r={id:uid(),workoutId:woRef.current.id,workoutName:woRef.current.name,totalDuration:elapsed,completedIntervals:ivRef.current,totalIntervals:woRef.current.intervals.length,completedAt:new Date(),mood};
     db.saveR(r).then(()=>navigate("results",r.id));
   };
 
@@ -1288,7 +1330,7 @@ function ActivePage({navigate,workoutId}) {
       if(rem<=0){
         const next=ivRef.current+1;
         if(next<woRef.current.intervals.length){ivRef.current=next;ivStartTs.current=Date.now();ivInitDur.current=woRef.current.intervals[next].d;setIdx(next);}
-        else{clearInterval(timer.current);clearTimer();haptic('success');setPhase("done");const r={id:uid(),workoutId:woRef.current.id,workoutName:woRef.current.name,totalDuration:tot,completedIntervals:woRef.current.intervals.length,totalIntervals:woRef.current.intervals.length,completedAt:new Date()};db.saveR(r).then(()=>setTimeout(()=>navigate("results",r.id),400));}
+        else{clearInterval(timer.current);clearTimer();haptic('success');setPhase("done");const r={id:uid(),workoutId:woRef.current.id,workoutName:woRef.current.name,totalDuration:tot,completedIntervals:woRef.current.intervals.length,totalIntervals:woRef.current.intervals.length,completedAt:new Date(),mood:moodRef.current};db.saveR(r).then(()=>setTimeout(()=>navigate("results",r.id),400));}
       }
     };
     timer.current=setInterval(tick,250);return()=>clearInterval(timer.current);
@@ -1408,24 +1450,33 @@ function ActivePage({navigate,workoutId}) {
           {/* Spacer */}
           <div style={{flex:1,minHeight:4}}/>
 
-          {/* Controls — кнопка СТАРТ/ПАУЗА всегда синяя */}
-          <div style={{flexShrink:0,padding:"0 20px",paddingBottom:"max(24px,env(safe-area-inset-bottom,24px))",display:"flex",alignItems:"center",justifyContent:"center",gap:24}}>
-            <button onClick={stop} {...sph} style={{...sps,width:60,height:60,borderRadius:"50%",background:CARD,border:`1px solid ${LINE}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,cursor:"pointer"}}>
-              <I.Stop size={20} fill={TXT} stroke="none"/>
+          {/* Controls */}
+          {moodSheet&&<MoodSheet current={mood} onSelect={v=>{setMood(v);moodRef.current=v;haptic('light');}} onClose={()=>setMoodSheet(false)}/>}
+          <div style={{flexShrink:0,padding:"0 16px",paddingBottom:"max(28px,env(safe-area-inset-bottom,28px))",display:"flex",alignItems:"center",justifyContent:"center",gap:20}}>
+            {/* СТОП */}
+            <button onClick={stop} {...sph} style={{...sps,width:64,height:64,borderRadius:"50%",background:CARD,border:`1px solid ${LINE}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,cursor:"pointer"}}>
+              <I.Stop size={22} fill={TXT} stroke="none"/>
               <span style={{fontSize:11,color:MUTED,fontWeight:600,letterSpacing:"0.04em"}}>СТОП</span>
             </button>
-            <button onClick={()=>{addPlayRipple();playPause();}} {...pph} style={{...pps,width:84,height:84,borderRadius:"50%",background:BLUE,border:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,cursor:"pointer",boxShadow:`0 0 32px ${BLUE}60`,position:"relative",overflow:"hidden"}}>
+            {/* СТАРТ / ПАУЗА */}
+            <button onClick={()=>{addPlayRipple();playPause();}} {...pph} style={{...pps,width:90,height:90,borderRadius:"50%",
+              background:phase==="running"?CARD2:BLUE,
+              border:phase==="running"?`1px solid ${LINE}`:"none",
+              display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,cursor:"pointer",
+              boxShadow:phase==="running"?"none":`0 0 32px ${BLUE}60`,
+              position:"relative",overflow:"hidden"}}>
               {playRipples.map(r=><span key={r} style={{position:"absolute",inset:0,borderRadius:"50%",background:"rgba(255,255,255,0.25)",animation:"ripple 0.55s ease-out forwards"}}/>)}
               {phase==="running"
-                ? <I.Pause size={26} fill="#fff" stroke="#fff"/>
-                : <BigPlay size={28} color="#fff"/>
+                ?<I.Pause size={28} fill={TXT}/>
+                :<BigPlay size={30} color="#fff"/>
               }
-              <span style={{fontSize:11,letterSpacing:"0.06em",fontWeight:700,color:"#fff"}}>{phase==="running"?"ПАУЗА":"СТАРТ"}</span>
+              <span style={{fontSize:11,letterSpacing:"0.06em",fontWeight:700,color:phase==="running"?TXT:"#fff"}}>{phase==="running"?"ПАУЗА":"СТАРТ"}</span>
             </button>
-            <div style={{width:60,height:60,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3}}>
-              <div style={{fontSize:28}}>{cfg.emoji}</div>
-              <span style={{fontSize:11,color:MUTED,fontWeight:600,letterSpacing:"0.04em"}}>ТЕМП</span>
-            </div>
+            {/* САМОЧУВСТВИЕ */}
+            <button onClick={()=>setMoodSheet(true)} {...sph} style={{...sps,width:64,height:64,borderRadius:"50%",background:mood?BLUE+"22":CARD,border:`1px solid ${mood?BLUE:LINE}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,cursor:"pointer"}}>
+              <span style={{fontSize:mood?28:22}}>{mood?MOODS.find(m=>m.v===mood)?.e:"🙂"}</span>
+              <span style={{fontSize:10,color:mood?BLUE:MUTED,fontWeight:600}}>НАСТРОЙ</span>
+            </button>
           </div>
         </>
       )}
