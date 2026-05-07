@@ -38,7 +38,7 @@ const TG_USER = tg?.initDataUnsafe?.user || null;
 
 // CSS переменная которую Telegram выставляет сам — высота его шапки
 const ST  = "calc(var(--tg-content-safe-area-inset-top, 88px) + env(safe-area-inset-top, 0px))";
-const SB  = "calc(env(safe-area-inset-bottom, 0px) + 80px)";
+const SB  = "calc(env(safe-area-inset-bottom, 0px) + 100px)";
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
 const cGet = k => new Promise(r => {
@@ -246,15 +246,15 @@ const I={
   Heart:  p=><Svg {...p}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill={p.fill||"currentColor"} stroke="none"/></Svg>,
   Timer:  p=><Svg {...p}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/><path d="M10 2h4"/></Svg>,
   Trend:  p=><Svg {...p}><polyline points="22,7 13.5,15.5 8.5,10.5 2,17"/><polyline points="16,7 22,7 22,13"/></Svg>,
-  Star:   p=><Svg {...p}><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill="currentColor" stroke="none"/></Svg>,
-  Dumbbell:p=><Svg {...p}><path d="M6 4v16M18 4v16M8 8h8M8 16h8"/><circle cx="4" cy="8" r="2" fill="currentColor"/><circle cx="4" cy="16" r="2" fill="currentColor"/><circle cx="20" cy="8" r="2" fill="currentColor"/><circle cx="20" cy="16" r="2" fill="currentColor"/></Svg>,
-  Run:    p=><Svg {...p}><circle cx="12" cy="4" r="2" fill="currentColor"/><path d="M14.5 8.5L17 12l-3 1-2-4.5"/><path d="M9 12l-2 5h5l1-3"/><path d="M12 7l-2 5 2 2"/></Svg>,
+  Star:   p=><Svg {...p}><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill={p.fill||"currentColor"} stroke="none"/></Svg>,
+  Dumbbell:p=><Svg {...p}><path d="M6 4v16M18 4v16M8 8h8M8 16h8"/><circle cx="4" cy="8" r="2" fill={p.fill||"currentColor"}/><circle cx="4" cy="16" r="2" fill={p.fill||"currentColor"}/><circle cx="20" cy="8" r="2" fill={p.fill||"currentColor"}/><circle cx="20" cy="16" r="2" fill={p.fill||"currentColor"}/></Svg>,
+  Run:    p=><Svg {...p}><circle cx="12" cy="4" r="2" fill={p.fill||"currentColor"}/><path d="M14.5 8.5L17 12l-3 1-2-4.5"/><path d="M9 12l-2 5h5l1-3"/><path d="M12 7l-2 5 2 2"/></Svg>,
   Mountain:p=><Svg {...p}><polyline points="23,21 1,21"/><polyline points="9,21 12,8 20,21"/><polyline points="2,21 9,21 5,14"/></Svg>,
-  Shield: p=><Svg {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" stroke="none" fillOpacity="0.8"/></Svg>,
-  Sun:    p=><Svg {...p}><circle cx="12" cy="12" r="5" fill="currentColor"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></Svg>,
+  Shield: p=><Svg {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill={p.fill||"currentColor"} stroke="none"/></Svg>,
+  Sun:    p=><Svg {...p}><circle cx="12" cy="12" r="5" fill={p.fill||"currentColor"}/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></Svg>,
   Award:  p=><Svg {...p}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></Svg>,
   Wind:   p=><Svg {...p}><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></Svg>,
-  Diamond:p=><Svg {...p}><polyline points="6,3 18,3 22,9 12,22 2,9" fill="currentColor" stroke="none" fillOpacity="0.85"/></Svg>,
+  Diamond:p=><Svg {...p}><polyline points="6,3 18,3 22,9 12,22 2,9" fill={p.fill||"currentColor"} stroke="none"/></Svg>,
 };
 
 // ─── PROGRAM ICON ─────────────────────────────────────────────────────────────
@@ -987,61 +987,62 @@ function ProfileView() {
 
   if(loading) return <Loader/>;
 
-  // Улучшенный график: линия + заливка + даты по оси X
+  // Улучшенный график с шкалой Y и датами X
   const LineChart=({points})=>{
     const [hover,setHover]=useState(null);
     if(points.length<2) return (
-      <div style={{height:90,display:"flex",alignItems:"center",justifyContent:"center",color:MUTED,fontSize:13}}>
-        Нужно минимум 2 замера
-      </div>
+      <div style={{height:100,display:"flex",alignItems:"center",justifyContent:"center",color:MUTED,fontSize:13}}>Нужно минимум 2 замера</div>
     );
-    const W=280,H=90,padL=8,padR=8,padT=8,padB=20;
+    const W=290,H=100,padL=36,padR=8,padT=10,padB=22;
     const iW=W-padL-padR, iH=H-padT-padB;
     const weights=points.map(p=>p.weight);
     const minW=Math.min(...weights), maxW=Math.max(...weights);
-    const range=maxW-minW||1;
+    const range=maxW-minW||0.5;
     const x=i=>padL+i*(iW/(points.length-1));
     const y=w=>padT+iH-(w-minW)/range*iH;
     const pts=points.map((p,i)=>({x:x(i),y:y(p.weight),w:p.weight,date:p.date}));
     const linePath=pts.map((p,i)=>i===0?`M${p.x},${p.y}`:`L${p.x},${p.y}`).join(" ");
     const areaPath=`${linePath} L${pts[pts.length-1].x},${H-padB} L${pts[0].x},${H-padB} Z`;
-    const fmt=d=>{const dt=new Date(d);return `${dt.getDate()}.${String(dt.getMonth()+1).padStart(2,"0")}`;};
+    const fmt=d=>{const dt=new Date(d);return`${dt.getDate()}.${String(dt.getMonth()+1).padStart(2,"0")}`;};
+    // Y-axis ticks
+    const yTicks=[minW, (minW+maxW)/2, maxW].map(v=>({v, y:y(v)}));
     return (
       <div style={{position:"relative"}}>
         <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:"visible",display:"block"}}>
           <defs>
             <linearGradient id="wg2" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={BLUE} stopOpacity="0.25"/>
+              <stop offset="0%" stopColor={BLUE} stopOpacity="0.28"/>
               <stop offset="100%" stopColor={BLUE} stopOpacity="0.02"/>
             </linearGradient>
           </defs>
-          {/* Горизонтальные линии */}
-          {[0,0.5,1].map((t,i)=>(
-            <line key={i} x1={padL} y1={padT+iH*t} x2={W-padR} y2={padT+iH*t} stroke={LINE} strokeWidth="0.5" strokeDasharray="3,3"/>
+          {/* Y-axis grid lines + labels */}
+          {yTicks.map((t,i)=>(
+            <g key={i}>
+              <line x1={padL} y1={t.y} x2={W-padR} y2={t.y} stroke={LINE} strokeWidth="0.5" strokeDasharray="3,3"/>
+              <text x={padL-4} y={t.y+3.5} fontSize="9" fill={MUTED} textAnchor="end">{t.v.toFixed(1)}</text>
+            </g>
           ))}
           <path d={areaPath} fill="url(#wg2)"/>
           <path d={linePath} fill="none" stroke={BLUE} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-          {/* Точки */}
+          {/* Dots */}
           {pts.map((p,i)=>(
-            <g key={i} onTouchStart={()=>setHover(i)} onTouchEnd={()=>setTimeout(()=>setHover(null),1500)}>
+            <g key={i} onTouchStart={()=>setHover(i)} onTouchEnd={()=>setTimeout(()=>setHover(null),1800)}>
               <circle cx={p.x} cy={p.y} r={hover===i?6:3.5} fill={BLUE} stroke={CARD} strokeWidth="2" style={{transition:"r 0.15s"}}/>
             </g>
           ))}
-          {/* Даты по оси X */}
+          {/* X-axis dates */}
           {pts.map((p,i)=>{
-            if(points.length<=5||i%Math.ceil(points.length/5)===0||i===points.length-1)
-              return <text key={i} x={p.x} y={H-4} fontSize="9" fill={MUTED} textAnchor="middle">{fmt(p.date)}</text>;
-            return null;
+            const show=points.length<=5||i===0||i===points.length-1||i%Math.ceil(points.length/4)===0;
+            return show?<text key={i} x={p.x} y={H-5} fontSize="9" fill={MUTED} textAnchor="middle">{fmt(p.date)}</text>:null;
           })}
-          {/* Tooltip при hover */}
+          {/* Tooltip */}
           {hover!==null&&pts[hover]&&(()=>{
             const p=pts[hover];
-            return (
-              <g>
-                <rect x={Math.min(p.x-24,W-56)} y={p.y-26} width={52} height={20} rx={6} fill={CARD2}/>
-                <text x={Math.min(p.x,W-28)} y={p.y-12} fontSize="10" fill={TXT} textAnchor="middle" fontWeight="700">{p.w} кг</text>
-              </g>
-            );
+            const tx=Math.max(padL+2,Math.min(p.x,W-padR-52));
+            return <g>
+              <rect x={tx} y={p.y-28} width={52} height={20} rx={6} fill={CARD2}/>
+              <text x={tx+26} y={p.y-14} fontSize="10.5" fill={TXT} textAnchor="middle" fontWeight="700">{p.w} кг</text>
+            </g>;
           })()}
         </svg>
       </div>
@@ -1050,37 +1051,34 @@ function ProfileView() {
 
   return (
     <Page>
-      {/* Header — только кнопка редактирования, без слова Профиль */}
-      <div style={{padding:"4px 16px 0",display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:8}}>
-        {has&&!editing&&<RndBtn onClick={()=>setEditing(true)}><I.Edit size={16}/></RndBtn>}
-      </div>
-
-      <div style={{padding:"0 16px"}}>
-        {/* Profile card */}
+      <div style={{padding:"0 16px",paddingTop:8}}>
+        {/* Profile card — с кнопкой редактирования внутри */}
         <div style={{background:CARD,borderRadius:20,padding:"16px",marginBottom:14}}>
-          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:has&&!editing?14:0}}>
-            {/* Photo */}
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
             <div style={{width:66,height:66,borderRadius:"50%",background:"linear-gradient(135deg,#3b82f6,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
               {photoUrl&&photoOk
                 ?<img src={photoUrl} referrerPolicy="no-referrer" alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} onError={()=>setPhotoOk(false)}/>
                 :<div style={{fontSize:24,fontWeight:700,color:"#fff"}}>{initials}</div>
               }
             </div>
-            {/* Имя и возраст — вплотную к фото */}
-            <div style={{minWidth:0}}>
-              <div style={{fontSize:21,fontWeight:700,lineHeight:1.1}}>{displayName||"—"}</div>
-              {profile.age&&<div style={{fontSize:14,color:SUB,marginTop:3}}>{profile.age} лет</div>}
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:21,fontWeight:700,lineHeight:1.15}}>{displayName||"—"}</div>
+              {profile.age&&<div style={{fontSize:14,color:SUB,marginTop:2}}>{profile.age} лет</div>}
             </div>
+            {has&&!editing&&(
+              <button onClick={()=>setEditing(true)}
+                style={{width:36,height:36,borderRadius:"50%",background:CARD2,border:`1px solid ${LINE}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                <I.Edit size={15}/>
+              </button>
+            )}
           </div>
 
-          {/* Weight update */}
           {has&&!editing&&(
-            <div style={{borderTop:`1px solid ${LINE}`,paddingTop:12}}>
-              <div style={{fontSize:12,color:SUB,marginBottom:4,letterSpacing:"0.04em"}}>ТЕКУЩИЙ ВЕС</div>
+            <div style={{borderTop:`1px solid ${LINE}`,marginTop:14,paddingTop:12}}>
+              <div style={{fontSize:11,color:MUTED,letterSpacing:"0.06em",marginBottom:4}}>ТЕКУЩИЙ ВЕС</div>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div style={{fontSize:28,fontWeight:700}}>{curWeight?`${curWeight} кг`:"—"}</div>
-                <button onClick={()=>setWPO(true)}
-                  style={{background:BLUE,border:"none",borderRadius:10,padding:"9px 14px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+                <button onClick={()=>setWPO(true)} style={{background:BLUE,border:"none",borderRadius:10,padding:"9px 14px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
                   <I.Refresh size={14}/>Обновить
                 </button>
               </div>
@@ -1089,10 +1087,10 @@ function ProfileView() {
           {weightPickerOpen&&<WeightPicker current={curWeight||70} onSave={updateWeight} onClose={()=>setWPO(false)}/>}
         </div>
 
-        {/* Weight chart — Вариант В: линия + заливка + даты + мини-статистика */}
+        {/* Chart */}
         {has&&!editing&&wPoints.length>0&&(
           <div style={{background:CARD,borderRadius:20,padding:"18px",marginBottom:14}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
               <div style={{fontSize:16,fontWeight:700}}>Динамика веса</div>
               {weightDiff!==null&&(
                 <div style={{fontSize:13,fontWeight:600,color:parseFloat(weightDiff)<0?"#4ade80":"#f87171"}}>
@@ -1101,13 +1099,11 @@ function ProfileView() {
               )}
             </div>
             <LineChart points={wPoints}/>
-            {/* Мини-статистика */}
             {wPoints.length>=2&&(()=>{
               const ws=wPoints.map(p=>p.weight);
-              const mn=Math.min(...ws).toFixed(1), mx=Math.max(...ws).toFixed(1);
-              const avg=(ws.reduce((a,b)=>a+b,0)/ws.length).toFixed(1);
+              const mn=Math.min(...ws).toFixed(1),mx=Math.max(...ws).toFixed(1),avg=(ws.reduce((a,b)=>a+b,0)/ws.length).toFixed(1);
               return (
-                <div style={{display:"flex",gap:8,marginTop:14}}>
+                <div style={{display:"flex",gap:8,marginTop:12}}>
                   {[{l:"Минимум",v:`${mn} кг`},{l:"Среднее",v:`${avg} кг`},{l:"Максимум",v:`${mx} кг`}].map((s,i)=>(
                     <div key={i} style={{flex:1,background:CARD2,borderRadius:10,padding:"8px 6px",textAlign:"center"}}>
                       <div style={{fontSize:10,color:MUTED,marginBottom:3}}>{s.l}</div>
@@ -1120,7 +1116,7 @@ function ProfileView() {
           </div>
         )}
 
-        {/* Target weight */}
+        {/* Target weight cards */}
         {has&&!editing&&(
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
             {[
@@ -1135,24 +1131,47 @@ function ProfileView() {
           </div>
         )}
 
-        {/* Edit form */}
+        {/* Edit form — wheel pickers для возраста и целевого веса */}
         {editing&&(
           <div style={{background:CARD,borderRadius:20,padding:"18px",marginBottom:14}}>
             <div style={{fontSize:16,fontWeight:700,marginBottom:16}}>Редактировать</div>
-            {[
-              {k:"name",        l:"Имя",         pl:"Введите имя", type:"text"},
-              {k:"age",         l:"Возраст",     pl:"—",           type:"number", s:"лет"},
-              {k:"targetWeight",l:"Целевой вес", pl:"—",           type:"number", s:"кг"},
-            ].map(f=>(
-              <div key={f.k} style={{marginBottom:14}}>
-                <div style={{fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:6}}>{f.l}</div>
-                <div style={{position:"relative"}}>
-                  <input value={profile[f.k]||""} type={f.type} onChange={e=>setProfile(p=>({...p,[f.k]:e.target.value}))} placeholder={f.pl}
-                    style={{width:"100%",background:CARD2,border:`1px solid ${LINE}`,borderRadius:12,color:TXT,fontSize:15,padding:`12px ${f.s?"40px":14}px 12px 14px`,outline:"none",boxSizing:"border-box"}}/>
-                  {f.s&&<span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",color:MUTED,fontSize:13}}>{f.s}</span>}
+            {/* Имя — текстовое поле */}
+            <div style={{marginBottom:18}}>
+              <div style={{fontSize:11,color:SUB,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Имя</div>
+              <input value={profile.name||""} type="text" onChange={e=>setProfile(p=>({...p,name:e.target.value}))} placeholder="Введите имя"
+                style={{width:"100%",background:CARD2,border:`1px solid ${LINE}`,borderRadius:12,color:TXT,fontSize:15,padding:"12px 14px",outline:"none",boxSizing:"border-box"}}/>
+            </div>
+            {/* Возраст — барабан */}
+            <div style={{marginBottom:18}}>
+              <div style={{fontSize:11,color:SUB,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Возраст</div>
+              <div style={{display:"flex",gap:8,background:CARD2,borderRadius:14,padding:"8px"}}>
+                <WheelCol value={parseInt(profile.age)||25} max={99} onChange={v=>setProfile(p=>({...p,age:String(v)}))} renderValue={v=>String(v)}/>
+                <div style={{display:"flex",alignItems:"center",color:SUB,fontSize:14,paddingBottom:20,flexShrink:0}}>лет</div>
+              </div>
+            </div>
+            {/* Целевой вес — барабан кг + граммы */}
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:11,color:SUB,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Целевой вес</div>
+              <div style={{display:"flex",gap:8,background:CARD2,borderRadius:14,padding:"8px"}}>
+                <WheelCol
+                  value={Math.floor(parseFloat(profile.targetWeight)||65)}
+                  max={200} onChange={v=>{
+                    const dec=Math.round((parseFloat(profile.targetWeight||0)%1)*10);
+                    setProfile(p=>({...p,targetWeight:`${v}.${dec}`}));
+                  }} renderValue={v=>String(v)}/>
+                <div style={{display:"flex",alignItems:"center",color:SUB,fontSize:20,paddingBottom:20,flexShrink:0}}>·</div>
+                <WheelCol
+                  value={Math.round((parseFloat(profile.targetWeight||0)%1)*10)}
+                  max={9} onChange={v=>{
+                    const kg=Math.floor(parseFloat(profile.targetWeight||65));
+                    setProfile(p=>({...p,targetWeight:`${kg}.${v}`}));
+                  }} renderValue={v=>String(v*100)}/>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",paddingBottom:20,gap:2,flexShrink:0}}>
+                  <div style={{fontSize:11,color:SUB}}>кг</div>
+                  <div style={{fontSize:11,color:MUTED}}>гр</div>
                 </div>
               </div>
-            ))}
+            </div>
             <div style={{display:"flex",gap:10}}>
               {has&&<button onClick={()=>setEditing(false)} style={{flex:1,background:CARD2,border:`1px solid ${LINE}`,borderRadius:12,padding:"13px",color:TXT,fontSize:14,fontWeight:600,cursor:"pointer"}}>Отмена</button>}
               <Btn onClick={save} style={{flex:2}}>Сохранить</Btn>
