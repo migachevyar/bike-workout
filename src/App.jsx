@@ -570,18 +570,11 @@ function SortList({intervals,onChange}) {
   );
 }
 
-// ─── VERTICAL COLOR STRIP (заменяет иконку) ──────────────────────────────────
-function ColorStrip({intervals,width=8,height=50,radius=4}) {
-  const ivs=intervals.map(iv=>({t:iv.t||iv.type,d:iv.d||iv.duration||1}));
-  if(!ivs.length) return <div style={{width,height,borderRadius:radius,background:CARD2,flexShrink:0}}/>;
-  const total=ivs.reduce((s,i)=>s+i.d,0);
-  return (
-    <div style={{width,height,borderRadius:radius,overflow:"hidden",flexShrink:0,display:"flex",flexDirection:"column"}}>
-      {ivs.map((iv,i)=>(
-        <div key={i} style={{flex:iv.d,background:IV[iv.t]?.color||"#4ade80",minHeight:2}}/>
-      ))}
-    </div>
-  );
+// ─── LEVEL COLOR BAR ─────────────────────────────────────────────────────────
+const LEVEL_BAR = { beginner:"#4ade80", intermediate:"#facc15", pro:"#f87171", custom:"#3b82f6" };
+function LevelBar({level,height=52}) {
+  const color = LEVEL_BAR[level] || LEVEL_BAR.custom;
+  return <div style={{width:5,height,borderRadius:3,background:color,flexShrink:0,boxShadow:`0 0 8px ${color}66`}}/>;
 }
 
 // ─── PROGRAM CARD (Figma style) ───────────────────────────────────────────────
@@ -594,8 +587,7 @@ function ProgCard({prog,onStart,added}) {
     <div style={{background:CARD,borderRadius:16,overflow:"hidden",marginBottom:10,animation:"slideUp 0.18s ease both"}}>
       {/* Main row */}
       <div {...ph} onClick={()=>setOpen(v=>!v)} style={{...ps,display:"flex",alignItems:"center",gap:12,padding:"14px",cursor:"pointer"}}>
-        {/* Цветовая полоса интервалов */}
-        <ColorStrip intervals={prog.iv} width={8} height={52} radius={4}/>
+        <LevelBar level={prog.level}/>
         {/* Info */}
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize:16,fontWeight:600,marginBottom:4,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{prog.name}</div>
@@ -677,7 +669,7 @@ function WCard({workout,onStart,onEdit,onDelete}) {
           transform:`translateX(${tx}px)`,
           transition:(drag.current&&isH.current)?"none":"transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)",
           position:"relative",zIndex:1,userSelect:"none",touchAction:(!isP&&open)?"none":"pan-y"}}>
-        <ColorStrip intervals={workout.intervals} width={8} height={52} radius={4}/>
+        <LevelBar level="custom"/>
         <div {...ph} onClick={()=>{if(!open)onStart();}} style={{...ps,flex:1,minWidth:0,cursor:"pointer"}}>
           <div style={{fontSize:15,fontWeight:600,marginBottom:4,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{workout.name}</div>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
