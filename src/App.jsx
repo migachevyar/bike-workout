@@ -38,7 +38,7 @@ const TG_USER = tg?.initDataUnsafe?.user || null;
 
 // CSS переменная которую Telegram выставляет сам — высота его шапки
 const ST  = "calc(var(--tg-content-safe-area-inset-top, 88px) + env(safe-area-inset-top, 0px))";
-const SB  = "calc(env(safe-area-inset-bottom, 0px) + 60px)";
+const SB  = "calc(env(safe-area-inset-bottom, 0px) + 80px)";
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
 const cGet = k => new Promise(r => {
@@ -241,9 +241,9 @@ const I={
   Weight: p=><Svg {...p}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></Svg>,
   Refresh:p=><Svg {...p}><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></Svg>,
   Camera: p=><Svg {...p}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></Svg>,
-  Flame:  p=><Svg {...p}><path d="M12 2s-5 6.5-5 10.5a5 5 0 0 0 10 0C17 8.5 12 2 12 2zm0 13.5a2 2 0 0 1-2-2c0-1.5 2-4 2-4s2 2.5 2 4a2 2 0 0 1-2 2z" fill="currentColor" stroke="none"/></Svg>,
+  Flame:  p=><Svg {...p}><path d="M12 2s-5 6.5-5 10.5a5 5 0 0 0 10 0C17 8.5 12 2 12 2zm0 13.5a2 2 0 0 1-2-2c0-1.5 2-4 2-4s2 2.5 2 4a2 2 0 0 1-2 2z" fill={p.fill||"currentColor"} stroke="none"/></Svg>,
   Bike:   p=><Svg {...p}><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M9 17l3-8 3 3h-3l-3 5"/><path d="M18 17l-3-8H9"/><circle cx="15" cy="6" r="1" fill="currentColor"/></Svg>,
-  Heart:  p=><Svg {...p}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="currentColor" stroke="none"/></Svg>,
+  Heart:  p=><Svg {...p}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill={p.fill||"currentColor"} stroke="none"/></Svg>,
   Timer:  p=><Svg {...p}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/><path d="M10 2h4"/></Svg>,
   Trend:  p=><Svg {...p}><polyline points="22,7 13.5,15.5 8.5,10.5 2,17"/><polyline points="16,7 22,7 22,13"/></Svg>,
   Star:   p=><Svg {...p}><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill="currentColor" stroke="none"/></Svg>,
@@ -284,23 +284,20 @@ const ICON_COMP_MAP = {
   sun:I.Sun, award:I.Award, wind:I.Wind, diamond:I.Diamond, target:I.Target,
 };
 function ProgSvgIcon({id, iconType, size=50}) {
-  // For preset programs, look up by id
   const preset = PRESET_ICON_MAP[id];
-  // For custom, use iconType field or cycle through CUSTOM_ICON_LIST
   let cfg;
   if (preset) {
     cfg = preset;
   } else if (iconType && CUSTOM_ICON_LIST.find(c=>c.type===iconType)) {
     cfg = CUSTOM_ICON_LIST.find(c=>c.type===iconType);
   } else {
-    // Deterministic fallback based on id string
     const hash = (id||"").split("").reduce((a,c)=>a+c.charCodeAt(0),0);
     cfg = CUSTOM_ICON_LIST[hash % CUSTOM_ICON_LIST.length];
   }
   const IconComp = ICON_COMP_MAP[cfg.type] || I.Star;
   return (
-    <div style={{width:size,height:size,borderRadius:14,background:cfg.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-      <IconComp size={22} style={{color:"#fff"}} fill="#fff" stroke="#fff" strokeWidth={1.5}/>
+    <div style={{width:size,height:size,borderRadius:14,background:cfg.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:"#fff"}}>
+      <IconComp size={24} fill="#fff" stroke="#fff" strokeWidth={1.5} style={{color:"#fff",display:"block"}}/>
     </div>
   );
 }
@@ -990,67 +987,98 @@ function ProfileView() {
 
   if(loading) return <Loader/>;
 
-  // Mini line chart
+  // Улучшенный график: линия + заливка + даты по оси X
   const LineChart=({points})=>{
-    if(points.length<2) return <div style={{height:80,display:"flex",alignItems:"center",justifyContent:"center",color:MUTED,fontSize:13}}>Недостаточно данных</div>;
-    const W=280,H=80,pad=8;
+    const [hover,setHover]=useState(null);
+    if(points.length<2) return (
+      <div style={{height:90,display:"flex",alignItems:"center",justifyContent:"center",color:MUTED,fontSize:13}}>
+        Нужно минимум 2 замера
+      </div>
+    );
+    const W=280,H=90,padL=8,padR=8,padT=8,padB=20;
+    const iW=W-padL-padR, iH=H-padT-padB;
     const weights=points.map(p=>p.weight);
-    const minW=Math.min(...weights)-0.5, maxW=Math.max(...weights)+0.5;
-    const xScale=(W-pad*2)/(points.length-1);
-    const yScale=(H-pad*2)/(maxW-minW||1);
-    const pts=points.map((p,i)=>({x:pad+i*xScale,y:H-pad-(p.weight-minW)*yScale}));
-    const path=pts.map((p,i)=>i===0?`M${p.x},${p.y}`:`L${p.x},${p.y}`).join(" ");
-    const areaPath=`${path} L${pts[pts.length-1].x},${H} L${pts[0].x},${H} Z`;
+    const minW=Math.min(...weights), maxW=Math.max(...weights);
+    const range=maxW-minW||1;
+    const x=i=>padL+i*(iW/(points.length-1));
+    const y=w=>padT+iH-(w-minW)/range*iH;
+    const pts=points.map((p,i)=>({x:x(i),y:y(p.weight),w:p.weight,date:p.date}));
+    const linePath=pts.map((p,i)=>i===0?`M${p.x},${p.y}`:`L${p.x},${p.y}`).join(" ");
+    const areaPath=`${linePath} L${pts[pts.length-1].x},${H-padB} L${pts[0].x},${H-padB} Z`;
+    const fmt=d=>{const dt=new Date(d);return `${dt.getDate()}.${String(dt.getMonth()+1).padStart(2,"0")}`;};
     return (
-      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:"visible"}}>
-        <defs>
-          <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={BLUE} stopOpacity="0.3"/>
-            <stop offset="100%" stopColor={BLUE} stopOpacity="0"/>
-          </linearGradient>
-        </defs>
-        <path d={areaPath} fill="url(#wg)"/>
-        <path d={path} fill="none" stroke={BLUE} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        {pts.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r="3.5" fill={BLUE} stroke={CARD} strokeWidth="2"/>)}
-        {/* Y labels */}
-        <text x={pad} y={pad+4} fontSize="9" fill={MUTED}>{maxW.toFixed(1)}</text>
-        <text x={pad} y={H-2} fontSize="9" fill={MUTED}>{minW.toFixed(1)}</text>
-      </svg>
+      <div style={{position:"relative"}}>
+        <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:"visible",display:"block"}}>
+          <defs>
+            <linearGradient id="wg2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={BLUE} stopOpacity="0.25"/>
+              <stop offset="100%" stopColor={BLUE} stopOpacity="0.02"/>
+            </linearGradient>
+          </defs>
+          {/* Горизонтальные линии */}
+          {[0,0.5,1].map((t,i)=>(
+            <line key={i} x1={padL} y1={padT+iH*t} x2={W-padR} y2={padT+iH*t} stroke={LINE} strokeWidth="0.5" strokeDasharray="3,3"/>
+          ))}
+          <path d={areaPath} fill="url(#wg2)"/>
+          <path d={linePath} fill="none" stroke={BLUE} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          {/* Точки */}
+          {pts.map((p,i)=>(
+            <g key={i} onTouchStart={()=>setHover(i)} onTouchEnd={()=>setTimeout(()=>setHover(null),1500)}>
+              <circle cx={p.x} cy={p.y} r={hover===i?6:3.5} fill={BLUE} stroke={CARD} strokeWidth="2" style={{transition:"r 0.15s"}}/>
+            </g>
+          ))}
+          {/* Даты по оси X */}
+          {pts.map((p,i)=>{
+            if(points.length<=5||i%Math.ceil(points.length/5)===0||i===points.length-1)
+              return <text key={i} x={p.x} y={H-4} fontSize="9" fill={MUTED} textAnchor="middle">{fmt(p.date)}</text>;
+            return null;
+          })}
+          {/* Tooltip при hover */}
+          {hover!==null&&pts[hover]&&(()=>{
+            const p=pts[hover];
+            return (
+              <g>
+                <rect x={Math.min(p.x-24,W-56)} y={p.y-26} width={52} height={20} rx={6} fill={CARD2}/>
+                <text x={Math.min(p.x,W-28)} y={p.y-12} fontSize="10" fill={TXT} textAnchor="middle" fontWeight="700">{p.w} кг</text>
+              </g>
+            );
+          })()}
+        </svg>
+      </div>
     );
   };
 
   return (
     <Page>
-      {/* Header */}
-      <div style={{padding:"16px 16px 0",display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-        <div style={{fontSize:22,fontWeight:700}}>Профиль</div>
+      {/* Header — только кнопка редактирования, без слова Профиль */}
+      <div style={{padding:"4px 16px 0",display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:8}}>
         {has&&!editing&&<RndBtn onClick={()=>setEditing(true)}><I.Edit size={16}/></RndBtn>}
       </div>
 
       <div style={{padding:"0 16px"}}>
         {/* Profile card */}
-        <div style={{background:CARD,borderRadius:20,padding:"18px",marginBottom:14}}>
-          <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:has&&!editing?14:0}}>
+        <div style={{background:CARD,borderRadius:20,padding:"16px",marginBottom:14}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:has&&!editing?14:0}}>
             {/* Photo */}
-            <div style={{width:62,height:62,borderRadius:"50%",background:"linear-gradient(135deg,#3b82f6,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
+            <div style={{width:66,height:66,borderRadius:"50%",background:"linear-gradient(135deg,#3b82f6,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
               {photoUrl&&photoOk
                 ?<img src={photoUrl} referrerPolicy="no-referrer" alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} onError={()=>setPhotoOk(false)}/>
-                :<div style={{fontSize:22,fontWeight:700,color:"#fff"}}>{initials}</div>
+                :<div style={{fontSize:24,fontWeight:700,color:"#fff"}}>{initials}</div>
               }
             </div>
-            {/* Info — имя и возраст рядом с фото */}
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:19,fontWeight:700,marginBottom:4}}>{displayName||"—"}</div>
-              {profile.age&&<div style={{fontSize:14,color:SUB}}>{profile.age} лет</div>}
+            {/* Имя и возраст — вплотную к фото */}
+            <div style={{minWidth:0}}>
+              <div style={{fontSize:21,fontWeight:700,lineHeight:1.1}}>{displayName||"—"}</div>
+              {profile.age&&<div style={{fontSize:14,color:SUB,marginTop:3}}>{profile.age} лет</div>}
             </div>
           </div>
 
           {/* Weight update */}
           {has&&!editing&&(
-            <div style={{borderTop:`1px solid ${LINE}`,paddingTop:14}}>
-              <div style={{fontSize:13,color:SUB,marginBottom:8}}>Текущий вес</div>
+            <div style={{borderTop:`1px solid ${LINE}`,paddingTop:12}}>
+              <div style={{fontSize:12,color:SUB,marginBottom:4,letterSpacing:"0.04em"}}>ТЕКУЩИЙ ВЕС</div>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <div style={{fontSize:24,fontWeight:700}}>{curWeight?`${curWeight} кг`:"—"}</div>
+                <div style={{fontSize:28,fontWeight:700}}>{curWeight?`${curWeight} кг`:"—"}</div>
                 <button onClick={()=>setWPO(true)}
                   style={{background:BLUE,border:"none",borderRadius:10,padding:"9px 14px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
                   <I.Refresh size={14}/>Обновить
@@ -1061,16 +1089,34 @@ function ProfileView() {
           {weightPickerOpen&&<WeightPicker current={curWeight||70} onSave={updateWeight} onClose={()=>setWPO(false)}/>}
         </div>
 
-        {/* Weight chart */}
+        {/* Weight chart — Вариант В: линия + заливка + даты + мини-статистика */}
         {has&&!editing&&wPoints.length>0&&(
           <div style={{background:CARD,borderRadius:20,padding:"18px",marginBottom:14}}>
-            <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Динамика веса</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div style={{fontSize:16,fontWeight:700}}>Динамика веса</div>
+              {weightDiff!==null&&(
+                <div style={{fontSize:13,fontWeight:600,color:parseFloat(weightDiff)<0?"#4ade80":"#f87171"}}>
+                  {parseFloat(weightDiff)<0?"":"+"}{weightDiff} кг
+                </div>
+              )}
+            </div>
             <LineChart points={wPoints}/>
-            {weightDiff!==null&&(
-              <div style={{marginTop:10,fontSize:14,fontWeight:600,color:parseFloat(weightDiff)<0?"#4ade80":"#f87171"}}>
-                {parseFloat(weightDiff)<0?"":"+"}{weightDiff} кг за период
-              </div>
-            )}
+            {/* Мини-статистика */}
+            {wPoints.length>=2&&(()=>{
+              const ws=wPoints.map(p=>p.weight);
+              const mn=Math.min(...ws).toFixed(1), mx=Math.max(...ws).toFixed(1);
+              const avg=(ws.reduce((a,b)=>a+b,0)/ws.length).toFixed(1);
+              return (
+                <div style={{display:"flex",gap:8,marginTop:14}}>
+                  {[{l:"Минимум",v:`${mn} кг`},{l:"Среднее",v:`${avg} кг`},{l:"Максимум",v:`${mx} кг`}].map((s,i)=>(
+                    <div key={i} style={{flex:1,background:CARD2,borderRadius:10,padding:"8px 6px",textAlign:"center"}}>
+                      <div style={{fontSize:10,color:MUTED,marginBottom:3}}>{s.l}</div>
+                      <div style={{fontSize:13,fontWeight:600}}>{s.v}</div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
 
@@ -1089,14 +1135,14 @@ function ProfileView() {
           </div>
         )}
 
-        {/* Edit form — без поля веса */}
+        {/* Edit form */}
         {editing&&(
           <div style={{background:CARD,borderRadius:20,padding:"18px",marginBottom:14}}>
             <div style={{fontSize:16,fontWeight:700,marginBottom:16}}>Редактировать</div>
             {[
-              {k:"name",       l:"Имя",         pl:"Введите имя", type:"text"},
-              {k:"age",        l:"Возраст",     pl:"—",           type:"number", s:"лет"},
-              {k:"targetWeight",l:"Целевой вес",pl:"—",           type:"number", s:"кг"},
+              {k:"name",        l:"Имя",         pl:"Введите имя", type:"text"},
+              {k:"age",         l:"Возраст",     pl:"—",           type:"number", s:"лет"},
+              {k:"targetWeight",l:"Целевой вес", pl:"—",           type:"number", s:"кг"},
             ].map(f=>(
               <div key={f.k} style={{marginBottom:14}}>
                 <div style={{fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:6}}>{f.l}</div>
@@ -1113,7 +1159,6 @@ function ProfileView() {
             </div>
           </div>
         )}
-
       </div>
     </Page>
   );
@@ -1447,19 +1492,19 @@ function ActivePage({navigate,workoutId}) {
             <IvBar intervals={workout.intervals.map(iv=>({t:iv.t,d:iv.d}))} h={6}/>
           </div>
 
-          {/* Spacer */}
-          <div style={{flex:1,minHeight:4}}/>
+          {/* Spacer — ограниченный, чтобы кнопки не уходили вниз */}
+          <div style={{flex:1,minHeight:8,maxHeight:32}}/>
 
           {/* Controls */}
           {moodSheet&&<MoodSheet current={mood} onSelect={v=>{setMood(v);moodRef.current=v;haptic('light');}} onClose={()=>setMoodSheet(false)}/>}
           <div style={{flexShrink:0,padding:"0 16px",paddingBottom:"max(28px,env(safe-area-inset-bottom,28px))",display:"flex",alignItems:"center",justifyContent:"center",gap:20}}>
             {/* СТОП */}
-            <button onClick={stop} {...sph} style={{...sps,width:76,height:56,borderRadius:28,background:CARD,border:`1px solid ${LINE}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,cursor:"pointer"}}>
-              <I.Stop size={20} fill={TXT} stroke="none"/>
+            <button onClick={stop} {...sph} style={{...sps,width:84,height:62,borderRadius:31,background:CARD,border:`1px solid ${LINE}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,cursor:"pointer"}}>
+              <I.Stop size={22} fill={TXT} stroke="none"/>
               <span style={{fontSize:11,color:MUTED,fontWeight:600,letterSpacing:"0.04em"}}>СТОП</span>
             </button>
             {/* СТАРТ / ПАУЗА */}
-            <button onClick={()=>{addPlayRipple();playPause();}} {...pph} style={{...pps,width:90,height:90,borderRadius:"50%",
+            <button onClick={()=>{addPlayRipple();playPause();}} {...pph} style={{...pps,width:92,height:92,borderRadius:"50%",
               background:phase==="running"?CARD2:BLUE,
               border:phase==="running"?`1px solid ${LINE}`:"none",
               display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,cursor:"pointer",
@@ -1473,8 +1518,8 @@ function ActivePage({navigate,workoutId}) {
               <span style={{fontSize:11,letterSpacing:"0.06em",fontWeight:700,color:phase==="running"?TXT:"#fff"}}>{phase==="running"?"ПАУЗА":"СТАРТ"}</span>
             </button>
             {/* САМОЧУВСТВИЕ */}
-            <button onClick={()=>setMoodSheet(true)} {...sph} style={{...sps,width:76,height:56,borderRadius:28,background:mood?BLUE+"22":CARD,border:`1px solid ${mood?BLUE:LINE}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,cursor:"pointer"}}>
-              <span style={{fontSize:mood?24:20,lineHeight:1}}>{mood?MOODS.find(m=>m.v===mood)?.e:"😊"}</span>
+            <button onClick={()=>setMoodSheet(true)} {...sph} style={{...sps,width:84,height:62,borderRadius:31,background:mood?BLUE+"22":CARD,border:`1px solid ${mood?BLUE:LINE}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,cursor:"pointer"}}>
+              <span style={{fontSize:mood?26:22,lineHeight:1}}>{mood?MOODS.find(m=>m.v===mood)?.e:"😊"}</span>
               <span style={{fontSize:11,color:mood?BLUE:MUTED,fontWeight:600,letterSpacing:"0.02em"}}>НАСТРОЙ</span>
             </button>
           </div>
