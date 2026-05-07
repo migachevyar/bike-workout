@@ -570,6 +570,20 @@ function SortList({intervals,onChange}) {
   );
 }
 
+// ─── VERTICAL COLOR STRIP (заменяет иконку) ──────────────────────────────────
+function ColorStrip({intervals,width=8,height=50,radius=4}) {
+  const ivs=intervals.map(iv=>({t:iv.t||iv.type,d:iv.d||iv.duration||1}));
+  if(!ivs.length) return <div style={{width,height,borderRadius:radius,background:CARD2,flexShrink:0}}/>;
+  const total=ivs.reduce((s,i)=>s+i.d,0);
+  return (
+    <div style={{width,height,borderRadius:radius,overflow:"hidden",flexShrink:0,display:"flex",flexDirection:"column"}}>
+      {ivs.map((iv,i)=>(
+        <div key={i} style={{flex:iv.d,background:IV[iv.t]?.color||"#4ade80",minHeight:2}}/>
+      ))}
+    </div>
+  );
+}
+
 // ─── PROGRAM CARD (Figma style) ───────────────────────────────────────────────
 function ProgCard({prog,onStart,added}) {
   const [ph,ps]=usePress(0.97);
@@ -580,8 +594,8 @@ function ProgCard({prog,onStart,added}) {
     <div style={{background:CARD,borderRadius:16,overflow:"hidden",marginBottom:10,animation:"slideUp 0.18s ease both"}}>
       {/* Main row */}
       <div {...ph} onClick={()=>setOpen(v=>!v)} style={{...ps,display:"flex",alignItems:"center",gap:12,padding:"14px",cursor:"pointer"}}>
-        {/* Icon */}
-        <ProgSvgIcon id={prog.id}/>
+        {/* Цветовая полоса интервалов */}
+        <ColorStrip intervals={prog.iv} width={8} height={52} radius={4}/>
         {/* Info */}
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize:16,fontWeight:600,marginBottom:4,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{prog.name}</div>
@@ -663,7 +677,7 @@ function WCard({workout,onStart,onEdit,onDelete}) {
           transform:`translateX(${tx}px)`,
           transition:(drag.current&&isH.current)?"none":"transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)",
           position:"relative",zIndex:1,userSelect:"none",touchAction:(!isP&&open)?"none":"pan-y"}}>
-        <ProgSvgIcon id={workout.id} iconType={workout.iconType}/>
+        <ColorStrip intervals={workout.intervals} width={8} height={52} radius={4}/>
         <div {...ph} onClick={()=>{if(!open)onStart();}} style={{...ps,flex:1,minWidth:0,cursor:"pointer"}}>
           <div style={{fontSize:15,fontWeight:600,marginBottom:4,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{workout.name}</div>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
@@ -1061,9 +1075,9 @@ function ProfileView() {
                 :<div style={{fontSize:24,fontWeight:700,color:"#fff"}}>{initials}</div>
               }
             </div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:21,fontWeight:700,lineHeight:1.15}}>{displayName||"—"}</div>
-              {profile.age&&<div style={{fontSize:14,color:SUB,marginTop:2}}>{profile.age} лет</div>}
+            <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
+              <div style={{fontSize:20,fontWeight:700,lineHeight:1.2,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{displayName||"—"}</div>
+              {profile.age&&<div style={{fontSize:14,color:SUB,marginTop:4,lineHeight:1}}>{profile.age} лет</div>}
             </div>
             {has&&!editing&&(
               <button onClick={()=>setEditing(true)}
