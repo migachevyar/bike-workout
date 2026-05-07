@@ -665,11 +665,11 @@ function WCard({workout,onStart,onEdit,onDelete}) {
       )}
       {/* Карточка */}
       <div onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={onTE}
-        style={{background:CARD,borderRadius:16,padding:"14px",display:"flex",alignItems:"center",gap:12,
+        style={{background:CARD,borderRadius:16,padding:"11px 12px",display:"flex",alignItems:"center",gap:10,
           transform:`translateX(${tx}px)`,
           transition:(drag.current&&isH.current)?"none":"transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)",
           position:"relative",zIndex:1,userSelect:"none",touchAction:(!isP&&open)?"none":"pan-y"}}>
-        <LevelBar level="custom"/>
+        <LevelBar level={workout.barColor||"custom"}/>
         <div {...ph} onClick={()=>{if(!open)onStart();}} style={{...ps,flex:1,minWidth:0,cursor:"pointer"}}>
           <div style={{fontSize:15,fontWeight:600,marginBottom:4,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{workout.name}</div>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
@@ -1189,11 +1189,23 @@ function ProfileView() {
   );
 }
 
+// Доступные цвета для полосы кастомных тренировок
+const BAR_COLORS = [
+  {id:"custom",  color:"#3b82f6", label:"Синий"},
+  {id:"violet",  color:"#a855f7", label:"Фиолет"},
+  {id:"orange",  color:"#f97316", label:"Оранжевый"},
+  {id:"pink",    color:"#ec4899", label:"Розовый"},
+  {id:"teal",    color:"#14b8a6", label:"Бирюза"},
+  {id:"indigo",  color:"#6366f1", label:"Индиго"},
+];
+// Extend LEVEL_BAR with custom colors
+Object.assign(LEVEL_BAR, Object.fromEntries(BAR_COLORS.map(c=>[c.id,c.color])));
+
 // ─── CREATE / EDIT ────────────────────────────────────────────────────────────
 function CreatePage({navigate,editId}) {
   const [name,setName]=useState("");
   const [intervals,setIV]=useState([]);
-  const [iconType,setIconType]=useState(CUSTOM_ICON_LIST[0].type);
+  const [barColor,setBarColor]=useState("custom");
   const [loading,setLoad]=useState(!!editId);
 
   useEffect(()=>{(async()=>{
@@ -1202,7 +1214,7 @@ function CreatePage({navigate,editId}) {
       if(w){
         setName(w.name);
         setIV(w.intervals.map(iv=>({...iv,t:iv.t||iv.type,d:iv.d||iv.duration,type:iv.t||iv.type,duration:iv.d||iv.duration})));
-        if(w.iconType)setIconType(w.iconType);
+        if(w.barColor)setBarColor(w.barColor);
       }
     } else {
       setIV([{id:uid(),t:"slow",type:"slow",d:180,duration:180},{id:uid(),t:"fast",type:"fast",d:60,duration:60},{id:uid(),t:"slow",type:"slow",d:120,duration:120}]);
@@ -1214,7 +1226,7 @@ function CreatePage({navigate,editId}) {
   const save=async()=>{
     if(!name.trim()){alert("Введите название");return;}
     if(!intervals.length){alert("Добавьте интервал");return;}
-    await db.saveW({id:editId||uid(),name:name.trim(),intervals,iconType});
+    await db.saveW({id:editId||uid(),name:name.trim(),intervals,barColor});
     navigate("home");
   };
   const norm=arr=>arr.map(iv=>({...iv,t:iv.t||iv.type,d:iv.d||iv.duration,type:iv.t||iv.type,duration:iv.d||iv.duration}));
@@ -1223,38 +1235,39 @@ function CreatePage({navigate,editId}) {
 
   return (
     <div style={{minHeight:"100vh",background:BG,color:TXT,boxSizing:"border-box",paddingTop:ST}}>
-      {/* Sticky header — только назад + заголовок */}
       <div style={{position:"sticky",top:ST,background:"rgba(13,13,15,0.97)",backdropFilter:"blur(20px)",borderBottom:`1px solid ${LINE}`,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,zIndex:10}}>
         <RndBtn onClick={()=>navigate("home")}><I.Back size={18}/></RndBtn>
         <div style={{fontSize:16,fontWeight:700}}>{editId?"Редактировать":"Создать тренировку"}</div>
       </div>
 
       <div style={{padding:"20px 16px 32px"}}>
-        {/* Иконка */}
+        {/* Название */}
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Название</div>
+          <input value={name} onChange={e=>setName(e.target.value)} placeholder="Моя тренировка"
+            style={{width:"100%",background:CARD,border:`1px solid ${LINE}`,borderRadius:14,color:TXT,fontSize:16,padding:"14px",outline:"none",boxSizing:"border-box"}}/>
+        </div>
+
+        {/* Цвет полосы */}
         <div style={{marginBottom:24}}>
-          <div style={{fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:12}}>Иконка</div>
+          <div style={{fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:12}}>Цвет полосы</div>
           <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-            {CUSTOM_ICON_LIST.map(ic=>{
-              const sel=ic.type===iconType;
-              const Comp=ICON_COMP_MAP[ic.type]||I.Star;
+            {BAR_COLORS.map(bc=>{
+              const sel=bc.id===barColor;
               return (
-                <button key={ic.type} onClick={()=>setIconType(ic.type)}
-                  style={{width:48,height:48,borderRadius:13,background:ic.bg,border:sel?`2px solid #fff`:"2px solid transparent",
-                    display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",
-                    boxShadow:sel?"0 0 0 3px rgba(255,255,255,0.25)":"none",
-                    transition:"all 0.15s",transform:sel?"scale(1.1)":"scale(1)"}}>
-                  <Comp size={20} style={{color:"#fff"}} fill="#fff" stroke="#fff" strokeWidth={1.5}/>
+                <button key={bc.id} onClick={()=>setBarColor(bc.id)}
+                  style={{width:36,height:36,borderRadius:"50%",background:bc.color,border:sel?`3px solid #fff`:"3px solid transparent",
+                    cursor:"pointer",boxShadow:sel?`0 0 0 2px ${bc.color}66,0 0 12px ${bc.color}55`:"none",
+                    transition:"all 0.15s",transform:sel?"scale(1.15)":"scale(1)"}}>
                 </button>
               );
             })}
           </div>
-        </div>
-
-        {/* Название */}
-        <div style={{marginBottom:24}}>
-          <div style={{fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Название</div>
-          <input value={name} onChange={e=>setName(e.target.value)} placeholder="Моя тренировка"
-            style={{width:"100%",background:CARD,border:`1px solid ${LINE}`,borderRadius:14,color:TXT,fontSize:16,padding:"14px",outline:"none",boxSizing:"border-box"}}/>
+          {/* Превью полосы */}
+          <div style={{display:"flex",alignItems:"center",gap:10,marginTop:12,background:CARD,borderRadius:12,padding:"10px 14px"}}>
+            <LevelBar level={barColor} height={36}/>
+            <div style={{fontSize:13,color:SUB}}>Так будет выглядеть в списке</div>
+          </div>
         </div>
 
         {/* Интервалы */}
@@ -1274,7 +1287,6 @@ function CreatePage({navigate,editId}) {
           </button>
         </div>
 
-        {/* Кнопка Сохранить внизу */}
         <Btn onClick={save} disabled={!name.trim()||!intervals.length}>Сохранить</Btn>
       </div>
     </div>
@@ -1603,14 +1615,14 @@ function ResultStatCard({emoji,label,val,num,fmt,delay}){
 function DetailsPage({navigate,resultId}) {
   const [result,setR]=useState(null);
   const [ph,ps]=usePress();
-  useEffect(()=>{db.getRById(resultId).then(r=>{if(!r)navigate("home");else setR(r);});},[resultId]);
+  useEffect(()=>{db.getRById(resultId).then(r=>{if(!r)navigate("stats");else setR(r);});},[resultId]);
   if(!result) return <Loader/>;
   const done=result.completedIntervals===result.totalIntervals;
   const date=new Date(result.completedAt);
   return (
     <div style={{minHeight:"100vh",background:BG,color:TXT,paddingTop:ST,paddingLeft:16,paddingRight:16,paddingBottom:32,boxSizing:"border-box"}}>
-      <div style={{paddingTop:ST,display:"flex",alignItems:"center",gap:12,marginBottom:22,paddingBottom:16,borderBottom:`1px solid ${LINE}`}}>
-        <RndBtn onClick={()=>navigate("home")}><I.Back size={18}/></RndBtn>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,paddingBottom:14,borderBottom:`1px solid ${LINE}`}}>
+        <RndBtn onClick={()=>navigate("stats")}><I.Back size={18}/></RndBtn>
         <div style={{fontSize:17,fontWeight:700}}>Детали тренировки</div>
       </div>
       <div style={{textAlign:"center",marginBottom:20}}>
