@@ -585,17 +585,16 @@ function ProgCard({prog,onStart,added}) {
 
   return (
     <div style={{background:CARD,borderRadius:16,overflow:"hidden",marginBottom:10,animation:"slideUp 0.18s ease both"}}>
-      <div {...ph} onClick={()=>setOpen(v=>!v)} style={{...ps,display:"flex",alignItems:"center",gap:12,padding:"11px 12px",cursor:"pointer"}}>
-        <LevelBar level={prog.level} height={44}/>
+      <div {...ph} onClick={()=>setOpen(v=>!v)} style={{...ps,display:"flex",alignItems:"center",gap:10,padding:"10px 12px",cursor:"pointer"}}>
+        <LevelBar level={prog.level} height={40}/>
         <div style={{flex:1,minWidth:0}}>
-          {/* Название + бейдж уровня в одной строке */}
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"nowrap"}}>
-            <div style={{fontSize:15,fontWeight:600,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",flex:1}}>{prog.name}</div>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3,flexWrap:"nowrap"}}>
+            <div style={{fontSize:16,fontWeight:700,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",flex:1,textAlign:"left"}}>{prog.name}</div>
             <span style={{fontSize:10,fontWeight:700,color:lc,background:lc+"18",borderRadius:5,padding:"2px 7px",flexShrink:0,whiteSpace:"nowrap"}}>{prog.ll}</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <span style={{display:"flex",alignItems:"center",gap:4,color:SUB,fontSize:12}}><I.Clock size={11}/>{prog.dur} мин</span>
-            <span style={{display:"flex",alignItems:"center",gap:3,color:SUB,fontSize:12}}>
+            <span style={{display:"flex",alignItems:"center",gap:4,color:SUB,fontSize:13}}><I.Clock size={11}/>{prog.dur} мин</span>
+            <span style={{display:"flex",alignItems:"center",gap:3,color:SUB,fontSize:13}}>
               <I.Zap size={11} fill={SUB} stroke={SUB}/>{prog.kcal} ккал
             </span>
           </div>
@@ -661,22 +660,21 @@ function WCard({workout,onStart,onEdit,onDelete}) {
       )}
       {/* Карточка */}
       <div onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={onTE}
-        style={{background:CARD,borderRadius:16,padding:"11px 12px",display:"flex",alignItems:"center",gap:10,
+        style={{background:CARD,borderRadius:14,padding:"10px 12px",display:"flex",alignItems:"center",gap:10,
           transform:`translateX(${tx}px)`,
           transition:(drag.current&&isH.current)?"none":"transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)",
           position:"relative",zIndex:1,userSelect:"none",touchAction:(!isP&&open)?"none":"pan-y"}}>
-        <LevelBar level={workout.barColor||"custom"}/>
+        <LevelBar level={workout.barColor||"custom"} height={40}/>
         <div {...ph} onClick={()=>{if(!open)onStart();}} style={{...ps,flex:1,minWidth:0,cursor:"pointer"}}>
-          <div style={{fontSize:15,fontWeight:600,marginBottom:4,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{workout.name}</div>
-          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-            <span style={{display:"flex",alignItems:"center",gap:4,color:SUB,fontSize:12}}><I.Clock size={11}/>{fmtD(total)}</span>
-            <span style={{fontSize:12,color:SUB}}>{ivs.length} инт.</span>
+          <div style={{fontSize:16,fontWeight:700,marginBottom:3,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",textAlign:"left"}}>{workout.name}</div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{display:"flex",alignItems:"center",gap:4,color:SUB,fontSize:13}}><I.Clock size={11}/>{fmtD(total)}</span>
+            <span style={{fontSize:13,color:SUB}}>{ivs.length} инт.</span>
           </div>
-          <IvBar intervals={ivs} h={3}/>
         </div>
         <button onClick={()=>{if(!open)onStart();}}
-          style={{width:44,height:44,borderRadius:"50%",background:BLUE,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
-          <BigPlay size={22}/>
+          style={{width:40,height:40,borderRadius:"50%",background:BLUE,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+          <BigPlay size={20}/>
         </button>
       </div>
     </div>
@@ -714,14 +712,17 @@ function HCard({result,onClick,onDelete}) {
         </button>
       </div>
       <div {...ph} onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={onTE} onClick={()=>!open&&onClick()}
-        style={{...ps,background:CARD,borderRadius:14,padding:"13px 14px",cursor:"pointer",transform:`translateX(${tx}px)`,transition:(drag.current&&isH.current)?"none":"transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)",position:"relative",zIndex:1,userSelect:"none",touchAction:open?"none":"pan-y"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-          <div style={{fontSize:15,fontWeight:600,flex:1,marginRight:8,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{result.workoutName}</div>
-          <div style={{fontSize:15,fontWeight:700,color:TXT,flexShrink:0}}>{Math.round(result.totalDuration/60)} мин</div>
-        </div>
-        <div style={{display:"flex",gap:12,alignItems:"center"}}>
-          <span style={{fontSize:12,color:SUB}}>{fmt}</span>
-          <span style={{fontSize:12,color:done?"#4ade80":"#fb923c"}}>{result.completedIntervals}/{result.totalIntervals} инт.</span>
+        style={{...ps,background:CARD,borderRadius:14,padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,transform:`translateX(${tx}px)`,transition:(drag.current&&isH.current)?"none":"transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)",position:"relative",zIndex:1,userSelect:"none",touchAction:open?"none":"pan-y"}}>
+        <div style={{width:4,height:36,borderRadius:2,background:done?"#4ade80":"#fb923c",flexShrink:0}}/>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+            <div style={{fontSize:16,fontWeight:700,flex:1,marginRight:8,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",textAlign:"left"}}>{result.workoutName}</div>
+            <div style={{fontSize:15,fontWeight:700,flexShrink:0}}>{Math.round(result.totalDuration/60)} мин</div>
+          </div>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            <span style={{fontSize:13,color:SUB}}>{fmt}</span>
+            <span style={{fontSize:13,color:done?"#4ade80":"#fb923c"}}>{result.completedIntervals}/{result.totalIntervals} инт.</span>
+          </div>
         </div>
       </div>
     </div>
