@@ -572,9 +572,9 @@ function SortList({intervals,onChange}) {
 
 // ─── LEVEL COLOR BAR ─────────────────────────────────────────────────────────
 const LEVEL_BAR = { beginner:"#4ade80", intermediate:"#facc15", pro:"#f87171", custom:"#3b82f6" };
-function LevelBar({level,height=52}) {
+function LevelBar({level}) {
   const color = LEVEL_BAR[level] || LEVEL_BAR.custom;
-  return <div style={{width:5,height,borderRadius:3,background:color,flexShrink:0,boxShadow:`0 0 8px ${color}66`}}/>;
+  return <div style={{width:5,alignSelf:"stretch",margin:"-10px 0",borderRadius:3,background:color,flexShrink:0,boxShadow:`0 0 8px ${color}66`}}/>;
 }
 
 // ─── PROGRAM CARD (Figma style) ───────────────────────────────────────────────
@@ -586,11 +586,10 @@ function ProgCard({prog,onStart,added}) {
   return (
     <div style={{background:CARD,borderRadius:16,overflow:"hidden",marginBottom:10,animation:"slideUp 0.18s ease both"}}>
       <div {...ph} onClick={()=>setOpen(v=>!v)} style={{...ps,display:"flex",alignItems:"center",gap:10,padding:"10px 12px",cursor:"pointer"}}>
-        <LevelBar level={prog.level} height={40}/>
+        <LevelBar level={prog.level}/>
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3,flexWrap:"nowrap"}}>
             <div style={{fontSize:16,fontWeight:700,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",flex:1,textAlign:"left"}}>{prog.name}</div>
-            <span style={{fontSize:10,fontWeight:700,color:lc,background:lc+"18",borderRadius:5,padding:"2px 7px",flexShrink:0,whiteSpace:"nowrap"}}>{prog.ll}</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <span style={{display:"flex",alignItems:"center",gap:4,color:SUB,fontSize:13}}><I.Clock size={11}/>{prog.dur} мин</span>
@@ -664,7 +663,7 @@ function WCard({workout,onStart,onEdit,onDelete}) {
           transform:`translateX(${tx}px)`,
           transition:(drag.current&&isH.current)?"none":"transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)",
           position:"relative",zIndex:1,userSelect:"none",touchAction:(!isP&&open)?"none":"pan-y"}}>
-        <LevelBar level={workout.barColor||"custom"} height={40}/>
+        <LevelBar level={workout.barColor||"custom"}/>
         <div {...ph} onClick={()=>{if(!open)onStart();}} style={{...ps,flex:1,minWidth:0,cursor:"pointer"}}>
           <div style={{fontSize:16,fontWeight:700,marginBottom:3,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",textAlign:"left"}}>{workout.name}</div>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -748,7 +747,7 @@ function HomeView({navigate}) {
   const startProg=async prog=>{ const ex=workouts.find(w=>w.id===prog.id); if(ex){navigate("workout",ex.id);return;} const w={id:prog.id,name:prog.name,intervals:prog.iv.map(iv=>({...iv,id:uid()}))}; await db.saveW(w); navigate("workout",w.id); };
   const chooseLevel=l=>{ localStorage.setItem("bw_ul",l); setUL(l); setLvlSheet(false); };
   const myWorkouts=workouts.filter(w=>!PROG_IDS.has(w.id));
-  const filtProgs=userLevel?PROGS.filter(p=>p.level===userLevel):PROGS;
+  const filtProgs=userLevel==="all"?[...PROGS].sort((a,b)=>a.dur-b.dur):userLevel?PROGS.filter(p=>p.level===userLevel):PROGS;
 
   if(loading) return <Loader/>;
 
@@ -778,7 +777,7 @@ function HomeView({navigate}) {
           <div style={{fontSize:18,fontWeight:700}}>Программы</div>
           <button onClick={()=>setLvlSheet(true)}
             style={{background:CARD2,border:`1px solid ${LINE}`,borderRadius:20,padding:"5px 12px",color:userLevel?BLUE:SUB,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
-            {userLevel?LEVEL_LABEL[userLevel]:"Уровень"} <span style={{fontSize:11}}>▾</span>
+            {userLevel==="all"?"Все":userLevel?LEVEL_LABEL[userLevel]:"Уровень"} <span style={{fontSize:11}}>▾</span>
           </button>
         </div>
         {filtProgs.map(p=><ProgCard key={p.id} prog={p} onStart={startProg} added={addedIds.has(p.id)}/>)}
@@ -790,7 +789,8 @@ function HomeView({navigate}) {
           <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:CARD,borderRadius:"20px 20px 0 0",padding:"20px 16px",paddingBottom:"max(32px,env(safe-area-inset-bottom,32px))"}}>
             <div style={{width:36,height:4,background:MUTED,borderRadius:2,margin:"0 auto 20px"}}/>
             <div style={{fontSize:17,fontWeight:700,marginBottom:16}}>Ваш уровень</div>
-            {[{l:"beginner",label:"Новичок",emoji:"🌱",desc:"Первые тренировки, безопасная нагрузка"},
+            {[{l:"all",label:"Все",emoji:"🏅",desc:"Все программы по возрастанию времени"},
+              {l:"beginner",label:"Новичок",emoji:"🌱",desc:"Первые тренировки, безопасная нагрузка"},
               {l:"intermediate",label:"Опытный",emoji:"⚡",desc:"HIIT, интервалы, смешанная нагрузка"},
               {l:"pro",label:"Профи",emoji:"🏆",desc:"Максимальная интенсивность, VO2max"}].map(lv=>(
               <button key={lv.l} onClick={()=>chooseLevel(lv.l)}
