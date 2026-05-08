@@ -574,7 +574,7 @@ function SortList({intervals,onChange}) {
 const LEVEL_BAR = { beginner:"#4ade80", intermediate:"#facc15", pro:"#f87171", custom:"#3b82f6" };
 function LevelBar({level}) {
   const color = LEVEL_BAR[level] || LEVEL_BAR.custom;
-  return <div style={{width:5,alignSelf:"stretch",margin:"-10px 0",borderRadius:3,background:color,flexShrink:0,boxShadow:`0 0 8px ${color}66`}}/>;
+  return <div style={{width:4,height:46,borderRadius:3,background:color,flexShrink:0,boxShadow:`0 0 8px ${color}55`}}/>;
 }
 
 // ─── PROGRAM CARD (Figma style) ───────────────────────────────────────────────
@@ -800,7 +800,6 @@ function HomeView({navigate}) {
                 {userLevel===lv.l&&<I.Check size={18} style={{color:BLUE}}/>}
               </button>
             ))}
-            {userLevel&&<button onClick={()=>chooseLevel("")} style={{width:"100%",background:"none",border:"none",color:SUB,fontSize:13,cursor:"pointer",marginTop:8,padding:"8px"}}>Сбросить уровень</button>}
           </div>
         </div>,
         document.body
@@ -1057,14 +1056,15 @@ function ProfileView() {
       <div style={{padding:"0 16px",paddingTop:8}}>
         {/* Profile card — с кнопкой редактирования внутри */}
         <div style={{background:CARD,borderRadius:20,padding:"16px",marginBottom:14}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
             <div style={{width:66,height:66,borderRadius:"50%",background:"linear-gradient(135deg,#3b82f6,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
               {photoUrl&&photoOk
                 ?<img src={photoUrl} referrerPolicy="no-referrer" alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} onError={()=>setPhotoOk(false)}/>
                 :<div style={{fontSize:24,fontWeight:700,color:"#fff"}}>{initials}</div>
               }
             </div>
-            <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
+            <div style={{width:2,height:44,borderRadius:2,background:`linear-gradient(to bottom,${BLUE}88,${BLUE}22)`,flexShrink:0,marginLeft:2}}/>
+            <div style={{flex:1,minWidth:0,overflow:"hidden",paddingLeft:2}}>
               <div style={{fontSize:20,fontWeight:700,lineHeight:1.2,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{displayName||"—"}</div>
               {profile.age&&<div style={{fontSize:14,color:SUB,marginTop:4,lineHeight:1}}>{profile.age} лет</div>}
             </div>
