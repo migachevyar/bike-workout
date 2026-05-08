@@ -585,35 +585,31 @@ function ProgCard({prog,onStart,added}) {
 
   return (
     <div style={{background:CARD,borderRadius:16,overflow:"hidden",marginBottom:10,animation:"slideUp 0.18s ease both"}}>
-      {/* Main row */}
-      <div {...ph} onClick={()=>setOpen(v=>!v)} style={{...ps,display:"flex",alignItems:"center",gap:12,padding:"14px",cursor:"pointer"}}>
-        <LevelBar level={prog.level}/>
-        {/* Info */}
+      <div {...ph} onClick={()=>setOpen(v=>!v)} style={{...ps,display:"flex",alignItems:"center",gap:12,padding:"11px 12px",cursor:"pointer"}}>
+        <LevelBar level={prog.level} height={44}/>
         <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:16,fontWeight:600,marginBottom:4,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{prog.name}</div>
-          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+          {/* Название + бейдж уровня в одной строке */}
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"nowrap"}}>
+            <div style={{fontSize:15,fontWeight:600,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",flex:1}}>{prog.name}</div>
+            <span style={{fontSize:10,fontWeight:700,color:lc,background:lc+"18",borderRadius:5,padding:"2px 7px",flexShrink:0,whiteSpace:"nowrap"}}>{prog.ll}</span>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
             <span style={{display:"flex",alignItems:"center",gap:4,color:SUB,fontSize:12}}><I.Clock size={11}/>{prog.dur} мин</span>
             <span style={{display:"flex",alignItems:"center",gap:3,color:SUB,fontSize:12}}>
               <I.Zap size={11} fill={SUB} stroke={SUB}/>{prog.kcal} ккал
             </span>
           </div>
-          <span style={{fontSize:11,fontWeight:700,color:lc,background:lc+"18",borderRadius:5,padding:"2px 8px"}}>
-            {prog.ll}
-          </span>
         </div>
-        {/* Play button */}
         <button onClick={e=>{e.stopPropagation();onStart(prog);}}
-          style={{width:44,height:44,borderRadius:"50%",background:BLUE,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
-          <BigPlay size={22}/>
+          style={{width:40,height:40,borderRadius:"50%",background:BLUE,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+          <BigPlay size={20}/>
         </button>
       </div>
-
-      {/* Expanded */}
       {open&&(
-        <div style={{padding:"0 14px 14px",borderTop:`1px solid ${LINE}`,animation:"fadeIn 0.15s ease"}}>
-          <p style={{fontSize:13,color:SUB,lineHeight:1.6,margin:"12px 0 10px"}}>{prog.desc}</p>
+        <div style={{padding:"0 12px 12px",borderTop:`1px solid ${LINE}`,animation:"fadeIn 0.15s ease"}}>
+          <p style={{fontSize:13,color:SUB,lineHeight:1.6,margin:"10px 0 8px"}}>{prog.desc}</p>
           <IvBar intervals={prog.iv.map(iv=>({t:iv.t,d:iv.d}))} h={4}/>
-          <div style={{display:"flex",gap:10,marginTop:10,flexWrap:"wrap"}}>
+          <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
             {Object.entries(IV).map(([t,c])=>{ const cnt=prog.iv.filter(i=>i.t===t).length; if(!cnt)return null; return <span key={t} style={{fontSize:11,color:c.color,background:c.color+"14",borderRadius:6,padding:"2px 8px"}}>{c.emoji} {cnt}</span>; })}
           </div>
         </div>
@@ -1614,34 +1610,47 @@ function ResultStatCard({emoji,label,val,num,fmt,delay}){
 // ─── DETAILS ──────────────────────────────────────────────────────────────────
 function DetailsPage({navigate,resultId}) {
   const [result,setR]=useState(null);
-  const [ph,ps]=usePress();
   useEffect(()=>{db.getRById(resultId).then(r=>{if(!r)navigate("stats");else setR(r);});},[resultId]);
   if(!result) return <Loader/>;
   const done=result.completedIntervals===result.totalIntervals;
   const date=new Date(result.completedAt);
+  const moodObj=result.mood?MOODS.find(m=>m.v===result.mood):null;
+  const dayStr=date.toLocaleDateString("ru-RU",{weekday:"short",day:"numeric",month:"short"});
+  const timeStr=date.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+
+  const rows=[
+    {emoji:"📅", label:"Дата", val:`${dayStr}, ${timeStr}`},
+    {emoji:"⏱",  label:"Длительность", val:fmtD(result.totalDuration)},
+    {emoji:"🎯", label:"Интервалы",     val:`${result.completedIntervals} из ${result.totalIntervals}`,
+      extra:<div style={{display:"flex",gap:3,marginTop:8}}>{Array.from({length:result.totalIntervals}).map((_,i)=><div key={i} style={{flex:1,height:4,borderRadius:2,background:i<result.completedIntervals?BLUE:MUTED}}/>)}</div>},
+    ...(moodObj?[{emoji:moodObj.e, label:"Самочувствие", val:moodObj.l}]:[]),
+  ];
+
   return (
     <div style={{minHeight:"100vh",background:BG,color:TXT,paddingTop:ST,paddingLeft:16,paddingRight:16,paddingBottom:32,boxSizing:"border-box"}}>
-      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,paddingBottom:14,borderBottom:`1px solid ${LINE}`}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,paddingBottom:12,borderBottom:`1px solid ${LINE}`}}>
         <RndBtn onClick={()=>navigate("stats")}><I.Back size={18}/></RndBtn>
         <div style={{fontSize:17,fontWeight:700}}>Детали тренировки</div>
       </div>
-      <div style={{textAlign:"center",marginBottom:20}}>
-        <div style={{fontSize:20,fontWeight:700,marginBottom:6}}>{result.workoutName}</div>
+      {/* Заголовок — левый край */}
+      <div style={{marginBottom:16}}>
+        <div style={{fontSize:20,fontWeight:700,marginBottom:4}}>{result.workoutName}</div>
         <div style={{fontSize:14,color:done?"#4ade80":"#fb923c",fontWeight:600}}>{done?"✅ Выполнено":"⏱ Частично"}</div>
       </div>
-      <div style={{display:"flex",flexDirection:"column",gap:10}}>
-        {[
-          {emoji:"📅",label:"Дата",val:<><div style={{fontSize:14}}>{date.toLocaleDateString("ru-RU",{weekday:"short",day:"numeric",month:"long"})}</div><div style={{color:SUB,fontSize:12}}>{date.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}</div></>},
-          {emoji:"⏱",label:"Длительность",val:<div style={{fontSize:19,fontWeight:700}}>{fmtD(result.totalDuration)}</div>},
-          {emoji:"🎯",label:"Интервалы",val:<><div style={{fontSize:19,fontWeight:700}}>{result.completedIntervals} из {result.totalIntervals}</div><div style={{display:"flex",gap:3,marginTop:6}}>{Array.from({length:result.totalIntervals}).map((_,i)=><div key={i} style={{flex:1,height:4,borderRadius:2,background:i<result.completedIntervals?BLUE:MUTED}}/>)}</div></>},
-        ].map((c,i)=>(
-          <div key={i} style={{background:CARD,borderRadius:14,padding:"14px",display:"flex",gap:12,alignItems:"flex-start"}}>
-            <div style={{width:38,height:38,background:CARD2,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,flexShrink:0}}>{c.emoji}</div>
-            <div style={{flex:1}}><div style={{fontSize:11,color:MUTED,marginBottom:4}}>{c.label}</div>{c.val}</div>
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {rows.map((c,i)=>(
+          <div key={i} style={{background:CARD,borderRadius:14,padding:"12px 14px",display:"flex",gap:14,alignItems:"flex-start"}}>
+            {/* Иконка — крупнее */}
+            <div style={{width:50,height:50,background:CARD2,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0}}>{c.emoji}</div>
+            <div style={{flex:1,paddingTop:2}}>
+              <div style={{fontSize:12,color:MUTED,marginBottom:5,textTransform:"uppercase",letterSpacing:"0.05em"}}>{c.label}</div>
+              <div style={{fontSize:17,fontWeight:600}}>{c.val}</div>
+              {c.extra}
+            </div>
           </div>
         ))}
       </div>
-      <Btn onClick={()=>navigate("home")} style={{marginTop:20,...ps}} {...ph}>На главную</Btn>
+      <Btn onClick={()=>navigate("home")} style={{marginTop:20}}>На главную</Btn>
     </div>
   );
 }
